@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export const sendVerificationEmail = async (email: string, token: string) => {
   const confirmLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/new-verification?token=${token}`;
 
@@ -15,6 +13,8 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     console.warn("⚠️ RESEND_API_KEY is missing. Email not sent via provider.");
     return;
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
     await resend.emails.send({

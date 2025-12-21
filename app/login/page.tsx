@@ -54,11 +54,16 @@ export default function LoginPage() {
               </div>
             )}
             <LoginButton />
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/register" className="underline">
-                Register
+            <div className="flex flex-col gap-2 text-center text-sm">
+              <Link href="/forgot-password" className="text-xs text-gray-500 hover:underline">
+                Forgot your password?
               </Link>
+              <div>
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="underline">
+                  Register
+                </Link>
+              </div>
             </div>
           </form>
         </CardContent>

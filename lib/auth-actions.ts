@@ -3,12 +3,12 @@
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
 import { db } from "@/lib/db";
-import { users, organisations, verificationTokens } from "@/db/schema";
+import { users, organisations, verificationTokens, passwordResetTokens } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
-import { generateVerificationToken } from "@/lib/tokens";
-import { sendVerificationEmail } from "@/lib/mail";
+import { generateVerificationToken, generatePasswordResetToken } from "@/lib/tokens";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/mail";
 
 export async function authenticate(
   prevState: string | undefined,
@@ -74,21 +74,36 @@ export async function register(
         password: hashedPassword,
         role: "ClientAdmin", // First user of an org is usually an admin
         organisationId: newOrg.id,
+        emailVerified: new Date(), // Auto-verify
       });
     });
 
-    const verificationToken = await generateVerificationToken(email);
-    await sendVerificationEmail(verificationToken.identifier, verificationToken.token);
+    // Auto-login after registration
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: "/dashboard",
+    });
 
-    // Return the token link for development convenience
-    const debugLink = `/new-verification?token=${verificationToken.token}`;
-
-    return { success: "Confirmation email sent!", debugLink };
+    return { success: "Account created!" };
   } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid credentials." };
+        default:
+          return { error: "Something went wrong." };
+      }
+    }
+    // If it's a redirect error (which signIn throws), rethrow it
+    if ((error as Error).message === "NEXT_REDIRECT") {
+      throw error;
+    }
     console.error("Registration error:", error);
     return { error: `Registration failed: ${(error as Error).message}` };
   }
 }
+
 
 export const newVerification = async (token: string) => {
   const existingToken = await db.query.verificationTokens.findFirst({
@@ -124,4 +139,67 @@ export const newVerification = async (token: string) => {
     .where(eq(verificationTokens.identifier, existingToken.identifier));
 
   return { success: "Email verified!" };
+};
+
+export const resetPassword = async (prevState: any, formData: FormData) => {
+  const email = formData.get("email") as string;
+
+  if (!email) {
+    return { error: "Email is required" };
+  }
+
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (!existingUser) {
+    return { error: "Email not found!" };
+  }
+
+  const passwordResetToken = await generatePasswordResetToken(email);
+  await sendPasswordResetEmail(passwordResetToken.identifier, passwordResetToken.token);
+
+  return { success: "Reset email sent!" };
+};
+
+export const updatePassword = async (prevState: any, formData: FormData) => {
+  const password = formData.get("password") as string;
+  const token = formData.get("token") as string;
+
+  if (!password || !token) {
+    return { error: "Missing fields!" };
+  }
+
+  const existingToken = await db.query.passwordResetTokens.findFirst({
+    where: eq(passwordResetTokens.token, token),
+  });
+
+  if (!existingToken) {
+    return { error: "Invalid token!" };
+  }
+
+  const hasExpired = new Date(existingToken.expires) < new Date();
+
+  if (hasExpired) {
+    return { error: "Token has expired!" };
+  }
+
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, existingToken.identifier),
+  });
+
+  if (!existingUser) {
+    return { error: "Email does not exist!" };
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  await db.update(users)
+    .set({ password: hashedPassword })
+    .where(eq(users.id, existingUser.id));
+
+  await db.delete(passwordResetTokens)
+    .where(eq(passwordResetTokens.identifier, existingToken.identifier));
+
+  return { success: "Password updated!" };
 };

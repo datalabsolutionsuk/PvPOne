@@ -47,13 +47,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         console.log("Password match result:", passwordsMatch);
 
         if (passwordsMatch) {
-          if (!user.emailVerified) {
-            console.log("User email not verified");
-            // You can throw an error here if you want to show a specific message, 
-            // but NextAuth's default error handling for Credentials is a bit tricky.
-            // For now, returning null will fail the login.
-            return null; 
-          }
           return user;
         }
 

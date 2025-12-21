@@ -98,6 +98,18 @@ export const verificationTokens = pgTable(
   })
 );
 
+export const passwordResetTokens = pgTable(
+  "passwordResetToken",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
+  })
+);
+
 // --- Jurisdiction Rules Engine ---
 
 export const jurisdictions = pgTable("jurisdictions", {

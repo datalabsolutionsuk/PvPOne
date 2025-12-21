@@ -48,6 +48,11 @@ export default function ForgotPasswordPage() {
             {state?.success && (
               <div className="text-sm text-green-500">
                 {state.success}
+                {state.debugLink && (
+                  <div className="mt-2 p-2 bg-yellow-100 text-yellow-800 rounded text-xs break-all">
+                    <strong>Debug Link:</strong> <Link href={state.debugLink} className="underline">{state.debugLink}</Link>
+                  </div>
+                )}
               </div>
             )}
             <ResetButton />

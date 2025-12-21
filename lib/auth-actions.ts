@@ -159,7 +159,9 @@ export const resetPassword = async (prevState: any, formData: FormData) => {
   const passwordResetToken = await generatePasswordResetToken(email);
   await sendPasswordResetEmail(passwordResetToken.identifier, passwordResetToken.token);
 
-  return { success: "Reset email sent!" };
+  // For debugging/demo purposes, we return the link so you can test without email delivery
+  const resetLink = `/reset-password?token=${passwordResetToken.token}`;
+  return { success: "Reset email sent!", debugLink: resetLink };
 };
 
 export const updatePassword = async (prevState: any, formData: FormData) => {

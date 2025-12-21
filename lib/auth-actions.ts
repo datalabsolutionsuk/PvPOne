@@ -3,10 +3,12 @@
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
 import { db } from "@/lib/db";
-import { users, organisations } from "@/db/schema";
+import { users, organisations, verificationTokens } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
 
 export async function authenticate(
   prevState: string | undefined,
@@ -75,32 +77,48 @@ export async function register(
       });
     });
 
-    // Attempt to sign in immediately after registration
-    // We can't call signIn inside a transaction or try/catch block easily if it redirects
-    // So we'll just return success and let the client redirect or ask to login
-    
+    const verificationToken = await generateVerificationToken(email);
+    await sendVerificationEmail(verificationToken.identifier, verificationToken.token);
+
+    return "Confirmation email sent!";
   } catch (error) {
     console.error("Registration error:", error);
     return `Registration failed: ${(error as Error).message}`;
   }
-  
-  // If we got here, registration was successful. 
-  // We can try to sign in, which will throw a redirect error that we shouldn't catch.
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: "/dashboard",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case "CredentialsSignin":
-          return "Invalid credentials.";
-        default:
-          return "Something went wrong.";
-      }
-    }
-    throw error;
-  }
 }
+
+export const newVerification = async (token: string) => {
+  const existingToken = await db.query.verificationTokens.findFirst({
+    where: eq(verificationTokens.token, token),
+  });
+
+  if (!existingToken) {
+    return { error: "Token does not exist!" };
+  }
+
+  const hasExpired = new Date(existingToken.expires) < new Date();
+
+  if (hasExpired) {
+    return { error: "Token has expired!" };
+  }
+
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, existingToken.identifier),
+  });
+
+  if (!existingUser) {
+    return { error: "Email does not exist!" };
+  }
+
+  await db.update(users)
+    .set({ 
+      emailVerified: new Date(),
+      email: existingToken.identifier, // In case user changed email
+    })
+    .where(eq(users.id, existingUser.id));
+
+  await db.delete(verificationTokens)
+    .where(eq(verificationTokens.identifier, existingToken.identifier));
+
+  return { success: "Email verified!" };
+};

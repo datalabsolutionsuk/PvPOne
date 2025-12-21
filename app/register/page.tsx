@@ -18,7 +18,7 @@ function RegisterButton() {
 }
 
 export default function RegisterPage() {
-  const [errorMessage, dispatch] = useFormState(register, undefined);
+  const [state, dispatch] = useFormState(register, undefined);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
@@ -66,9 +66,23 @@ export default function RegisterPage() {
                 required
               />
             </div>
-            {errorMessage && (
+            {state?.error && (
               <div className="text-sm text-red-500">
-                {errorMessage}
+                {state.error}
+              </div>
+            )}
+            {state?.success && (
+              <div className="text-sm text-green-500">
+                {state.success}
+              </div>
+            )}
+            {state?.debugLink && (
+              <div className="rounded-md bg-yellow-100 p-3 text-sm text-yellow-800">
+                <p className="font-bold">Development Mode:</p>
+                <p>Email delivery might fail without domain verification.</p>
+                <Link href={state.debugLink} className="underline font-bold text-blue-600">
+                  Click here to verify immediately
+                </Link>
               </div>
             )}
             <RegisterButton />

@@ -34,7 +34,7 @@ export async function authenticate(
 }
 
 export async function register(
-  prevState: string | undefined,
+  prevState: any,
   formData: FormData,
 ) {
   const name = formData.get("name") as string;
@@ -43,7 +43,7 @@ export async function register(
   const orgName = formData.get("orgName") as string;
 
   if (!email || !password || !name || !orgName) {
-    return "Please fill in all fields.";
+    return { error: "Please fill in all fields." };
   }
 
   try {
@@ -53,7 +53,7 @@ export async function register(
     });
 
     if (existingUser) {
-      return "User already exists.";
+      return { error: "User already exists." };
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -80,10 +80,13 @@ export async function register(
     const verificationToken = await generateVerificationToken(email);
     await sendVerificationEmail(verificationToken.identifier, verificationToken.token);
 
-    return "Confirmation email sent!";
+    // Return the token link for development convenience
+    const debugLink = `/new-verification?token=${verificationToken.token}`;
+
+    return { success: "Confirmation email sent!", debugLink };
   } catch (error) {
     console.error("Registration error:", error);
-    return `Registration failed: ${(error as Error).message}`;
+    return { error: `Registration failed: ${(error as Error).message}` };
   }
 }
 

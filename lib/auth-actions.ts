@@ -80,7 +80,7 @@ export async function register(
     
   } catch (error) {
     console.error("Registration error:", error);
-    return "Something went wrong during registration.";
+    return `Registration failed: ${(error as Error).message}`;
   }
   
   // If we got here, registration was successful. 

@@ -1,34 +1,52 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
-import { authenticate } from "@/lib/auth-actions";
+import { register } from "@/lib/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
-function LoginButton() {
+function RegisterButton() {
   const { pending } = useFormStatus();
   return (
     <Button className="w-full" type="submit" disabled={pending}>
-      {pending ? "Logging in..." : "Login"}
+      {pending ? "Creating account..." : "Create Account"}
     </Button>
   );
 }
 
-export default function LoginPage() {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+export default function RegisterPage() {
+  const [errorMessage, dispatch] = useFormState(register, undefined);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <Card className="w-full max-w-[350px]">
+      <Card className="w-full max-w-[400px]">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to access PVP One</CardDescription>
+          <CardTitle>Register</CardTitle>
+          <CardDescription>Create a new account for your organisation</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={dispatch} className="space-y-4">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="name">Full Name</Label>
+              <Input 
+                id="name" 
+                name="name"
+                placeholder="John Doe" 
+                required
+              />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="orgName">Organisation Name</Label>
+              <Input 
+                id="orgName" 
+                name="orgName"
+                placeholder="Acme Corp" 
+                required
+              />
+            </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input 
@@ -53,11 +71,11 @@ export default function LoginPage() {
                 {errorMessage}
               </div>
             )}
-            <LoginButton />
+            <RegisterButton />
             <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/register" className="underline">
-                Register
+              Already have an account?{" "}
+              <Link href="/login" className="underline">
+                Login
               </Link>
             </div>
           </form>

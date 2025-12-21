@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { users, organisations } from "@/db/schema";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 export async function authenticate(
   prevState: string | undefined,

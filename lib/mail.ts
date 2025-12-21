@@ -23,6 +23,11 @@ export const sendVerificationEmail = async (email: string, token: string) => {
       subject: "Confirm your email",
       html: `<p>Click <a href="${confirmLink}">here</a> to confirm your email.</p>`,
     });
+  } catch (error) {
+    console.error("Email sending failed:", error);
+  }
+};
+
 export const sendPasswordResetEmail = async (email: string, token: string) => {
   const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password?token=${token}`;
 

@@ -7,6 +7,7 @@ import { getCurrentOrganisationId } from "@/lib/context";
 import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 
 export async function createOrgUser(formData: FormData) {
   const session = await auth();
@@ -43,6 +44,7 @@ export async function createOrgUser(formData: FormData) {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   await db.insert(users).values({
+    id: randomUUID(),
     name,
     email,
     password: hashedPassword,

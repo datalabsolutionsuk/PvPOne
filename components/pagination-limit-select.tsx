@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-export function PaginationLimitSelect() {
+export function PaginationLimitSelect({ pageParam = "page" }: { pageParam?: string | string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -19,7 +19,10 @@ export function PaginationLimitSelect() {
   const handleValueChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("limit", value);
-    params.set("page", "1"); // Reset to page 1 when limit changes
+    
+    const paramsToReset = Array.isArray(pageParam) ? pageParam : [pageParam];
+    paramsToReset.forEach(p => params.set(p, "1"));
+
     router.push(`${pathname}?${params.toString()}`);
   };
 

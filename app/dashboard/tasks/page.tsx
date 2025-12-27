@@ -98,6 +98,9 @@ export default async function TasksPage({
         <h2 className="text-3xl font-bold tracking-tight">
           {searchParams.filter === "urgent" ? "Urgent Tasks" : "All Tasks"}
         </h2>
+        <Button asChild>
+          <Link href="/dashboard/tasks/new">Add Task</Link>
+        </Button>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">

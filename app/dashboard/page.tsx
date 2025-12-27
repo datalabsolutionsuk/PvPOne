@@ -8,6 +8,7 @@ import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, C
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function DashboardPage({
   searchParams,
@@ -23,7 +24,7 @@ export default async function DashboardPage({
 
   const deadlinesPage = Number(searchParams?.deadlinesPage) || 1;
   const statusPage = Number(searchParams?.statusPage) || 1;
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = Number(searchParams?.limit) || 5;
 
   let stats: { status: string | null; count: number }[] = [];
   let upcomingDeadlines: any[] = [];
@@ -235,9 +236,10 @@ export default async function DashboardPage({
               <div className="text-sm text-muted-foreground">
                 Page {statusPage} of {Math.max(1, totalStatusPages)}
               </div>
+              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage"]} />
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard?statusPage=${Math.max(1, statusPage - 1)}&deadlinesPage=${deadlinesPage}`}
+                  href={`/dashboard?statusPage=${Math.max(1, statusPage - 1)}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
                   className={statusPage <= 1 ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={statusPage <= 1} className="h-8 w-8">
@@ -245,7 +247,7 @@ export default async function DashboardPage({
                   </Button>
                 </Link>
                 <Link
-                  href={`/dashboard?statusPage=${Math.min(totalStatusPages, statusPage + 1)}&deadlinesPage=${deadlinesPage}`}
+                  href={`/dashboard?statusPage=${Math.min(totalStatusPages, statusPage + 1)}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
                   className={statusPage >= totalStatusPages ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={statusPage >= totalStatusPages} className="h-8 w-8">
@@ -287,9 +289,10 @@ export default async function DashboardPage({
               <div className="text-sm text-muted-foreground">
                 Page {deadlinesPage} of {Math.max(1, totalDeadlinesPages)}
               </div>
+              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage"]} />
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard?deadlinesPage=${Math.max(1, deadlinesPage - 1)}&statusPage=${statusPage}`}
+                  href={`/dashboard?deadlinesPage=${Math.max(1, deadlinesPage - 1)}&statusPage=${statusPage}&limit=${PAGE_SIZE}`}
                   className={deadlinesPage <= 1 ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={deadlinesPage <= 1} className="h-8 w-8">
@@ -297,7 +300,7 @@ export default async function DashboardPage({
                   </Button>
                 </Link>
                 <Link
-                  href={`/dashboard?deadlinesPage=${Math.min(totalDeadlinesPages, deadlinesPage + 1)}&statusPage=${statusPage}`}
+                  href={`/dashboard?deadlinesPage=${Math.min(totalDeadlinesPages, deadlinesPage + 1)}&statusPage=${statusPage}&limit=${PAGE_SIZE}`}
                   className={deadlinesPage >= totalDeadlinesPages ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={deadlinesPage >= totalDeadlinesPages} className="h-8 w-8">

@@ -415,6 +415,49 @@ export async function deleteOrganisation(id: string) {
   revalidatePath("/dashboard/admin/organisations");
 }
 
+export async function createTask(formData: FormData) {
+  const session = await auth();
+  const organisationId = await getCurrentOrganisationId();
+
+  if (!session?.user || !organisationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const applicationId = formData.get("applicationId") as string;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const dueDateStr = formData.get("dueDate") as string;
+  const type = formData.get("type") as string;
+
+  if (!applicationId || !title || !type) {
+    throw new Error("Missing required fields");
+  }
+
+  // Verify application belongs to organisation
+  const application = await db.query.applications.findFirst({
+    where: and(
+      eq(applications.id, applicationId),
+      eq(applications.organisationId, organisationId)
+    ),
+  });
+
+  if (!application) {
+    throw new Error("Application not found or unauthorized");
+  }
+
+  await db.insert(tasks).values({
+    applicationId,
+    title,
+    description,
+    dueDate: dueDateStr ? new Date(dueDateStr) : null,
+    type,
+    status: "PENDING",
+  });
+
+  revalidatePath(`/dashboard/applications/${applicationId}`);
+  redirect(`/dashboard/applications/${applicationId}`);
+}
+
 // --- Impersonation Actions ---
 
 import { cookies } from "next/headers";

@@ -56,7 +56,9 @@ export default async function DocumentsPage({
           id: documents.id,
           name: documents.name,
           type: documents.type,
+          owner: documents.owner,
           createdAt: documents.createdAt,
+          updatedAt: documents.updatedAt,
           appNumber: applications.applicationNumber,
           varietyName: varieties.name,
         })
@@ -169,15 +171,17 @@ export default async function DocumentsPage({
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Owner</TableHead>
                   <TableHead>Related Application</TableHead>
                   <TableHead>Uploaded At</TableHead>
+                  {superAdmin && <TableHead>Created / Updated</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedUploadedDocs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={superAdmin ? 7 : 6} className="text-center py-4 text-muted-foreground">
                       No documents uploaded yet.
                     </TableCell>
                   </TableRow>
@@ -186,6 +190,7 @@ export default async function DocumentsPage({
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.type}</TableCell>
+                      <TableCell>{item.owner || "-"}</TableCell>
                       <TableCell>
                         {item.appNumber ? (
                           <div className="flex flex-col">
@@ -199,6 +204,12 @@ export default async function DocumentsPage({
                       <TableCell>
                         {format(item.createdAt, "yyyy-MM-dd")}
                       </TableCell>
+                      {superAdmin && (
+                        <TableCell className="text-xs text-muted-foreground">
+                          <div>C: {item.createdAt ? format(item.createdAt, "yyyy-MM-dd") : "-"}</div>
+                          <div>U: {item.updatedAt ? format(item.updatedAt, "yyyy-MM-dd") : "-"}</div>
+                        </TableCell>
+                      )}
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
                           Download

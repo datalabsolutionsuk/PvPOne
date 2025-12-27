@@ -48,6 +48,11 @@ export default async function EditTaskPage({ params }: { params: { id: string } 
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="owner">Owner</Label>
+              <Input id="owner" name="owner" defaultValue={task.owner || ""} placeholder="e.g. John Doe" />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" name="description" defaultValue={task.description || ""} />
             </div>

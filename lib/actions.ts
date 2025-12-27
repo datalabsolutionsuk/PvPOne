@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export async function createVariety(formData: FormData) {
   const organisationId = await getCurrentOrganisationId();
@@ -67,7 +67,23 @@ export async function createApplication(formData: FormData) {
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
   const filingDate = filingDateStr ? new Date(filingDateStr) : new Date();
-  const applicationNumber = formData.get("applicationNumber") as string;
+  
+  // Generate Application Number: ClientName-4DigitNumber-Year
+  // 1. Get Organisation Name
+  const [org] = await db.select().from(organisations).where(eq(organisations.id, organisationId));
+  const clientName = org?.name?.replace(/\s+/g, "_").toUpperCase() || "UNKNOWN";
+  
+  // 2. Get Count of Applications for this Org to generate sequence
+  const [countRes] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(applications)
+    .where(eq(applications.organisationId, organisationId));
+  
+  const sequence = Number(countRes.count) + 1;
+  const sequenceStr = sequence.toString().padStart(4, "0");
+  const year = filingDate.getFullYear();
+  
+  const generatedAppNumber = `${clientName}_${sequenceStr}_${year}`;
 
   // 1. Create Application
   const [app] = await db
@@ -78,7 +94,7 @@ export async function createApplication(formData: FormData) {
       jurisdictionId,
       status: "Filed", // Assuming we are filing immediately for MVP flow
       filingDate: filingDate,
-      applicationNumber: applicationNumber || null,
+      applicationNumber: generatedAppNumber,
     })
     .returning();
 
@@ -358,6 +374,7 @@ export async function uploadDocument(formData: FormData) {
   const file = formData.get("file") as File;
   let taskId = formData.get("taskId") as string | null;
   const applicationId = formData.get("applicationId") as string | null;
+  const owner = formData.get("owner") as string;
 
   // If Super Admin and no org context, derive it
   if (isSuper && !organisationId) {
@@ -401,6 +418,7 @@ export async function uploadDocument(formData: FormData) {
         type: "DOCUMENT",
         status: "COMPLETED",
         dueDate: new Date(),
+        owner: owner,
      }).returning({ id: tasks.id });
      taskId = newTask.id;
   }
@@ -417,6 +435,7 @@ export async function uploadDocument(formData: FormData) {
     uploadedBy: session?.user?.id,
     taskId: taskId || null,
     applicationId: applicationId || null,
+    owner: owner,
   });
 
   if (taskId) {
@@ -605,6 +624,7 @@ export async function updateTask(formData: FormData) {
   const description = formData.get("description") as string;
   const dueDateStr = formData.get("dueDate") as string;
   const status = formData.get("status") as string;
+  const owner = formData.get("owner") as string;
 
   // Verify task belongs to organisation
   const task = await db.query.tasks.findFirst({
@@ -627,6 +647,8 @@ export async function updateTask(formData: FormData) {
     description,
     dueDate: dueDateStr ? new Date(dueDateStr) : null,
     status,
+    owner,
+    updatedAt: new Date(),
   }).where(eq(tasks.id, id));
 
   revalidatePath(`/dashboard/applications/${task.applicationId}`);

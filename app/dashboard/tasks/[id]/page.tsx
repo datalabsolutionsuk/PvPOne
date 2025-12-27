@@ -100,6 +100,10 @@ export default async function TaskDetailsPage({
               <Label className="text-muted-foreground">Type</Label>
               <div className="font-medium">{task.type}</div>
             </div>
+            <div>
+              <Label className="text-muted-foreground">Owner</Label>
+              <div className="font-medium">{task.owner || "-"}</div>
+            </div>
           </div>
 
           {task.description && (

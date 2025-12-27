@@ -58,6 +58,8 @@ export default async function ApplicationsPage({
         filingDate: applications.filingDate,
         varietyName: varieties.name,
         jurisdictionCode: jurisdictions.code,
+        createdAt: applications.createdAt,
+        updatedAt: applications.updatedAt,
       })
       .from(applications)
       .leftJoin(varieties, eq(applications.varietyId, varieties.id))
@@ -99,6 +101,7 @@ export default async function ApplicationsPage({
                 <TableHead>Jurisdiction</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Filing Date</TableHead>
+                {isSuper && <TableHead>Created / Updated</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -112,6 +115,12 @@ export default async function ApplicationsPage({
                   <TableCell>
                     {app.filingDate ? format(app.filingDate, "yyyy-MM-dd") : "-"}
                   </TableCell>
+                  {isSuper && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      <div>C: {app.createdAt ? format(app.createdAt, "yyyy-MM-dd") : "-"}</div>
+                      <div>U: {app.updatedAt ? format(app.updatedAt, "yyyy-MM-dd") : "-"}</div>
+                    </TableCell>
+                  )}
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/dashboard/applications/${app.id}`}>View</Link>
@@ -121,7 +130,7 @@ export default async function ApplicationsPage({
               ))}
               {paginatedApps.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isSuper ? 7 : 6} className="text-center py-8 text-muted-foreground">
                     No applications found.
                   </TableCell>
                 </TableRow>

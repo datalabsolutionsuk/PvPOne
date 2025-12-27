@@ -75,6 +75,15 @@ export default function UploadDocumentPage({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="owner">Owner</Label>
+              <Input 
+                id="owner" 
+                name="owner" 
+                placeholder="e.g. John Doe" 
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="file">File</Label>
               <Input 
                 id="file" 

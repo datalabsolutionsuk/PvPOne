@@ -233,7 +233,9 @@ export const documents = pgTable("documents", {
   type: text("type").notNull(), // e.g., "POA", "Assignment"
   storagePath: text("storage_path").notNull(),
   uploadedBy: text("uploaded_by").references(() => users.id),
+  owner: text("owner"), // Free text field for tenant admin
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 export const applicationStatusHistory = pgTable("application_status_history", {
@@ -268,7 +270,9 @@ export const tasks = pgTable("tasks", {
   dueDate: date("due_date", { mode: "date" }),
   status: text("status").default("PENDING").notNull(), // PENDING, COMPLETED
   type: text("type").notNull(), // DEADLINE, DOCUMENT
+  owner: text("owner"), // Free text field for tenant admin
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
 // --- Relations ---

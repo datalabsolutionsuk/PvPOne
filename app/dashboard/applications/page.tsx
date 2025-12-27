@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getCurrentOrganisationId } from "@/lib/context";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function ApplicationsPage({
@@ -21,7 +21,9 @@ export default async function ApplicationsPage({
   searchParams: { status?: string; page?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
-  if (!organisationId) {
+  const isSuper = await isSuperAdmin();
+  
+  if (!organisationId && !isSuper) {
     return <div>Unauthorized</div>;
   }
 
@@ -39,6 +41,15 @@ export default async function ApplicationsPage({
   }[] = [];
   
   try {
+    const conditions = [];
+    if (organisationId) {
+      conditions.push(eq(applications.organisationId, organisationId));
+    }
+    if (searchParams.status) {
+      // @ts-ignore
+      conditions.push(eq(applications.status, searchParams.status));
+    }
+
     let query = db
       .select({
         id: applications.id,
@@ -50,14 +61,13 @@ export default async function ApplicationsPage({
       })
       .from(applications)
       .leftJoin(varieties, eq(applications.varietyId, varieties.id))
-      .leftJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
-      .where(eq(applications.organisationId, organisationId))
-      .orderBy(desc(applications.createdAt));
+      .leftJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id));
 
-    if (searchParams.status) {
-      // @ts-ignore
-      query.where(and(eq(applications.status, searchParams.status), eq(applications.organisationId, organisationId)));
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
     }
+    
+    query.orderBy(desc(applications.createdAt));
 
     apps = await query;
   } catch (e) {

@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TaskActions, AddTaskButton } from "./actions";
 
 export default async function ApplicationDetailsPage({
   params,
@@ -95,8 +96,9 @@ export default async function ApplicationDetailsPage({
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Deadlines & Tasks</CardTitle>
+            <AddTaskButton applicationId={app.id} type="DEADLINE" />
           </CardHeader>
           <CardContent>
             <Table>
@@ -105,12 +107,13 @@ export default async function ApplicationDetailsPage({
                   <TableHead>Task</TableHead>
                   <TableHead>Due Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {deadlines.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       No deadlines found.
                     </TableCell>
                   </TableRow>
@@ -130,6 +133,9 @@ export default async function ApplicationDetailsPage({
                         {task.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <TaskActions taskId={task.id} applicationId={app.id} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -138,8 +144,9 @@ export default async function ApplicationDetailsPage({
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Required Documents</CardTitle>
+            <AddTaskButton applicationId={app.id} type="DOCUMENT" />
           </CardHeader>
           <CardContent>
             <Table>
@@ -174,12 +181,13 @@ export default async function ApplicationDetailsPage({
                         {task.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex justify-end items-center gap-2">
                       <Button asChild size="sm" variant="outline">
                         <Link href={`/dashboard/tasks/${task.id}`}>
                           {task.status === "COMPLETED" ? "View" : "Upload"}
                         </Link>
                       </Button>
+                      <TaskActions taskId={task.id} applicationId={app.id} />
                     </TableCell>
                   </TableRow>
                 ))}

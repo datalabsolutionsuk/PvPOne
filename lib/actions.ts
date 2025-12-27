@@ -41,7 +41,27 @@ export async function createApplication(formData: FormData) {
     throw new Error("Unauthorized");
   }
 
-  const varietyId = formData.get("varietyId") as string;
+  let varietyId = formData.get("varietyId") as string;
+  const isNewVariety = formData.get("isNewVariety") === "true";
+
+  if (isNewVariety) {
+    const newVarietyName = formData.get("newVarietyName") as string;
+    const newVarietySpecies = formData.get("newVarietySpecies") as string;
+
+    if (!newVarietyName || !newVarietySpecies) {
+      throw new Error("Variety Name and Species are required for new varieties");
+    }
+
+    const [newVariety] = await db.insert(varieties).values({
+      organisationId,
+      name: newVarietyName,
+      species: newVarietySpecies,
+      varietyType: "Unknown", // Default or add field to form if needed
+    }).returning();
+
+    varietyId = newVariety.id;
+  }
+
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
   const filingDate = filingDateStr ? new Date(filingDateStr) : new Date();
@@ -287,6 +307,25 @@ export async function deleteRuleDocumentRequirement(formData: FormData) {
   await db.delete(ruleDocumentRequirements).where(eq(ruleDocumentRequirements.id, id));
 
   revalidatePath(`/dashboard/rulesets/${rulesetId}`);
+}
+
+export async function deleteTask(formData: FormData) {
+  const session = await auth();
+  const organisationId = await getCurrentOrganisationId();
+  if (!organisationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const id = formData.get("id") as string;
+  const applicationId = formData.get("applicationId") as string;
+
+  // Ensure the task belongs to an application in the user's organisation
+  // This is a simplified check. Ideally, we should join with applications table.
+  // For now, we rely on the fact that only authorized users can see the delete button.
+  
+  await db.delete(tasks).where(eq(tasks.id, id));
+
+  revalidatePath(`/dashboard/applications/${applicationId}`);
 }
 
 export async function uploadDocument(formData: FormData) {

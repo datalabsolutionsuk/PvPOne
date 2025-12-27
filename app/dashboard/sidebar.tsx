@@ -82,6 +82,10 @@ export function Sidebar({
             <NavLink href="/dashboard/documents">Documents</NavLink>
             <NavLink href="/dashboard/subscription">Subscription</NavLink>
             
+            {(role === "LawyerAdmin" || role === "ClientAdmin") && (
+              <NavLink href="/dashboard/users">Users</NavLink>
+            )}
+            
             {role === "SuperAdmin" && (
               <>
                 <div className="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">

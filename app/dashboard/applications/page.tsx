@@ -38,6 +38,8 @@ export default async function ApplicationsPage({
     filingDate: Date | null;
     varietyName: string | null;
     jurisdictionCode: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
   }[] = [];
   
   try {

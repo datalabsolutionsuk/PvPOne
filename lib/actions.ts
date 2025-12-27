@@ -657,6 +657,45 @@ export async function updateTask(formData: FormData) {
   redirect(`/dashboard/tasks/${id}`);
 }
 
+export async function updateDocument(formData: FormData) {
+  const session = await auth();
+  const organisationId = await getCurrentOrganisationId();
+  const isSuper = session?.user?.role === "SuperAdmin";
+
+  if (!session?.user || (!organisationId && !isSuper)) {
+    throw new Error("Unauthorized");
+  }
+
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const type = formData.get("type") as string;
+  const owner = formData.get("owner") as string;
+
+  // Verify document belongs to organisation
+  const doc = await db.query.documents.findFirst({
+    where: eq(documents.id, id),
+  });
+
+  if (!doc) {
+    throw new Error("Document not found");
+  }
+
+  if (!isSuper && doc.organisationId !== organisationId) {
+    throw new Error("Unauthorized");
+  }
+
+  await db.update(documents).set({
+    name,
+    type,
+    owner,
+    updatedBy: session.user.id,
+    updatedAt: new Date(),
+  }).where(eq(documents.id, id));
+
+  revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents");
+}
+
 // --- Impersonation Actions ---
 
 import { cookies } from "next/headers";

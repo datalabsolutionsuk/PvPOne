@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { documents, applications, varieties, tasks, jurisdictions } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
+import { eq, desc, and, alias } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -50,6 +50,9 @@ export default async function DocumentsPage({
       requiredConditions.push(eq(applications.organisationId, organisationId));
     }
 
+    const creator = alias(users, "creator");
+    const updater = alias(users, "updater");
+
     const [uploaded, required] = await Promise.all([
       db
         .select({
@@ -61,10 +64,14 @@ export default async function DocumentsPage({
           updatedAt: documents.updatedAt,
           appNumber: applications.applicationNumber,
           varietyName: varieties.name,
+          createdBy: creator.name,
+          updatedBy: updater.name,
         })
         .from(documents)
         .leftJoin(applications, eq(documents.applicationId, applications.id))
         .leftJoin(varieties, eq(applications.varietyId, varieties.id))
+        .leftJoin(creator, eq(documents.uploadedBy, creator.id))
+        .leftJoin(updater, eq(documents.updatedBy, updater.id))
         .where(and(...uploadedConditions))
         .orderBy(desc(documents.createdAt)),
       
@@ -206,14 +213,19 @@ export default async function DocumentsPage({
                       </TableCell>
                       {superAdmin && (
                         <TableCell className="text-xs text-muted-foreground">
-                          <div>C: {item.createdAt ? format(item.createdAt, "yyyy-MM-dd") : "-"}</div>
-                          <div>U: {item.updatedAt ? format(item.updatedAt, "yyyy-MM-dd") : "-"}</div>
+                          <div>C: {item.createdAt ? format(item.createdAt, "yyyy-MM-dd") : "-"} {item.createdBy ? `(${item.createdBy})` : ""}</div>
+                          <div>U: {item.updatedAt ? format(item.updatedAt, "yyyy-MM-dd") : "-"} {item.updatedBy ? `(${item.updatedBy})` : ""}</div>
                         </TableCell>
                       )}
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          Download
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/dashboard/documents/${item.id}/edit`}>Edit</Link>
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            Download
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

@@ -739,10 +739,16 @@ export async function replyToQuery(queryId: string, content: string, application
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  await db.insert(messages).values({
-    queryId,
-    content,
-    senderId: session.user.id,
+  await db.transaction(async (tx) => {
+    await tx.insert(messages).values({
+      queryId,
+      content,
+      senderId: session.user.id,
+    });
+
+    await tx.update(queries)
+      .set({ updatedAt: new Date() })
+      .where(eq(queries.id, queryId));
   });
 
   revalidatePath(`/dashboard/applications/${applicationId}`);

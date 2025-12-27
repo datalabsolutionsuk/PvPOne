@@ -24,6 +24,7 @@ export default async function DashboardPage({
 
   const deadlinesPage = Number(searchParams?.deadlinesPage) || 1;
   const statusPage = Number(searchParams?.statusPage) || 1;
+  const queriesPage = Number(searchParams?.queriesPage) || 1;
   const PAGE_SIZE = Number(searchParams?.limit) || 5;
 
   let stats: { status: string | null; count: number }[] = [];
@@ -32,6 +33,7 @@ export default async function DashboardPage({
   let totalVarieties = 0;
   let pendingTasksCount = 0;
   let totalDeadlines = 0;
+  let totalQueries = 0;
 
   // Helper to apply org filter if present
   const orgFilter = (table: any) => organisationId ? eq(table.organisationId, organisationId) : undefined;
@@ -126,7 +128,14 @@ export default async function DashboardPage({
       queriesConditions.push(eq(applications.organisationId, organisationId));
     }
 
-    const recentQueries = await db
+    const queriesCountRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(queries)
+      .innerJoin(applications, eq(queries.applicationId, applications.id))
+      .where(and(...queriesConditions));
+    totalQueries = Number(queriesCountRes[0].count);
+
+    recentQueries = await db
       .select({
         query: queries,
         application: applications,
@@ -135,7 +144,8 @@ export default async function DashboardPage({
       .innerJoin(applications, eq(queries.applicationId, applications.id))
       .where(and(...queriesConditions))
       .orderBy(desc(queries.updatedAt))
-      .limit(5);
+      .limit(PAGE_SIZE)
+      .offset((queriesPage - 1) * PAGE_SIZE);
 
   } catch (e) {
     console.error("Failed to fetch dashboard stats", e);
@@ -149,6 +159,9 @@ export default async function DashboardPage({
 
   // Pagination Logic for Deadlines
   const totalDeadlinesPages = Math.ceil(totalDeadlines / PAGE_SIZE);
+
+  // Pagination Logic for Queries
+  const totalQueriesPages = Math.ceil(totalQueries / PAGE_SIZE);
 
   // Helper for status badge colors
   const getStatusColor = (status: string) => {
@@ -254,10 +267,10 @@ export default async function DashboardPage({
               <div className="text-sm text-muted-foreground">
                 Page {statusPage} of {Math.max(1, totalStatusPages)}
               </div>
-              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage"]} />
+              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage", "queriesPage"]} />
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard?statusPage=${Math.max(1, statusPage - 1)}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
+                  href={`/dashboard?statusPage=${Math.max(1, statusPage - 1)}&deadlinesPage=${deadlinesPage}&queriesPage=${queriesPage}&limit=${PAGE_SIZE}`}
                   className={statusPage <= 1 ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={statusPage <= 1} className="h-8 w-8">
@@ -265,7 +278,7 @@ export default async function DashboardPage({
                   </Button>
                 </Link>
                 <Link
-                  href={`/dashboard?statusPage=${Math.min(totalStatusPages, statusPage + 1)}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
+                  href={`/dashboard?statusPage=${Math.min(totalStatusPages, statusPage + 1)}&deadlinesPage=${deadlinesPage}&queriesPage=${queriesPage}&limit=${PAGE_SIZE}`}
                   className={statusPage >= totalStatusPages ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={statusPage >= totalStatusPages} className="h-8 w-8">
@@ -307,10 +320,10 @@ export default async function DashboardPage({
               <div className="text-sm text-muted-foreground">
                 Page {deadlinesPage} of {Math.max(1, totalDeadlinesPages)}
               </div>
-              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage"]} />
+              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage", "queriesPage"]} />
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard?deadlinesPage=${Math.max(1, deadlinesPage - 1)}&statusPage=${statusPage}&limit=${PAGE_SIZE}`}
+                  href={`/dashboard?deadlinesPage=${Math.max(1, deadlinesPage - 1)}&statusPage=${statusPage}&queriesPage=${queriesPage}&limit=${PAGE_SIZE}`}
                   className={deadlinesPage <= 1 ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={deadlinesPage <= 1} className="h-8 w-8">
@@ -318,7 +331,7 @@ export default async function DashboardPage({
                   </Button>
                 </Link>
                 <Link
-                  href={`/dashboard?deadlinesPage=${Math.min(totalDeadlinesPages, deadlinesPage + 1)}&statusPage=${statusPage}&limit=${PAGE_SIZE}`}
+                  href={`/dashboard?deadlinesPage=${Math.min(totalDeadlinesPages, deadlinesPage + 1)}&statusPage=${statusPage}&queriesPage=${queriesPage}&limit=${PAGE_SIZE}`}
                   className={deadlinesPage >= totalDeadlinesPages ? "pointer-events-none opacity-50" : ""}
                 >
                   <Button variant="outline" size="icon" disabled={deadlinesPage >= totalDeadlinesPages} className="h-8 w-8">
@@ -361,6 +374,31 @@ export default async function DashboardPage({
                   </Link>
                 ))
               )}
+            </div>
+
+            <div className="flex-shrink-0 flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {queriesPage} of {Math.max(1, totalQueriesPages)}
+              </div>
+              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage", "queriesPage"]} />
+              <div className="flex gap-2">
+                <Link
+                  href={`/dashboard?queriesPage=${Math.max(1, queriesPage - 1)}&statusPage=${statusPage}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
+                  className={queriesPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                >
+                  <Button variant="outline" size="icon" disabled={queriesPage <= 1} className="h-8 w-8">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link
+                  href={`/dashboard?queriesPage=${Math.min(totalQueriesPages, queriesPage + 1)}&statusPage=${statusPage}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
+                  className={queriesPage >= totalQueriesPages ? "pointer-events-none opacity-50" : ""}
+                >
+                  <Button variant="outline" size="icon" disabled={queriesPage >= totalQueriesPages} className="h-8 w-8">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

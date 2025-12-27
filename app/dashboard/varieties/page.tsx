@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getCurrentOrganisationId } from "@/lib/context";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function VarietiesPage({
   searchParams,
@@ -21,8 +21,9 @@ export default async function VarietiesPage({
   searchParams: { page?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
+  const isSuper = await isSuperAdmin();
   
-  if (!organisationId) {
+  if (!organisationId && !isSuper) {
     return <div>Unauthorized</div>;
   }
 
@@ -32,11 +33,15 @@ export default async function VarietiesPage({
 
   let data: any[] = [];
   try {
-    data = await db
+    const query = db
       .select()
-      .from(varieties)
-      .where(eq(varieties.organisationId, organisationId))
-      .orderBy(desc(varieties.createdAt));
+      .from(varieties);
+      
+    if (organisationId) {
+      query.where(eq(varieties.organisationId, organisationId));
+    }
+    
+    data = await query.orderBy(desc(varieties.createdAt));
   } catch (e) {
     console.error("Failed to fetch varieties", e);
   }

@@ -10,8 +10,9 @@ import { getCurrentOrganisationId } from "@/lib/context";
 export default async function OrgUsersPage() {
   const session = await auth();
   const organisationId = await getCurrentOrganisationId();
+  const isSuper = session?.user?.role === "SuperAdmin";
 
-  if (!session?.user || !organisationId) {
+  if (!session?.user || (!organisationId && !isSuper)) {
     redirect("/login");
   }
 
@@ -20,15 +21,20 @@ export default async function OrgUsersPage() {
     redirect("/dashboard");
   }
 
-  const orgUsers = await db
+  const query = db
     .select({
       id: users.id,
       name: users.name,
       email: users.email,
       role: users.role,
     })
-    .from(users)
-    .where(eq(users.organisationId, organisationId));
+    .from(users);
+
+  if (organisationId) {
+    query.where(eq(users.organisationId, organisationId));
+  }
+
+  const orgUsers = await query;
 
   return (
     <div className="space-y-6">

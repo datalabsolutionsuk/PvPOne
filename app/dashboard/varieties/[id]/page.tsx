@@ -10,24 +10,27 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function EditVarietyPage({ params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user?.organisationId) {
+  const organisationId = await getCurrentOrganisationId();
+  const isSuper = await isSuperAdmin();
+  
+  if (!organisationId && !isSuper) {
     return <div>Unauthorized</div>;
   }
 
   let variety;
   try {
+    const conditions = [eq(varieties.id, params.id)];
+    if (organisationId) {
+      conditions.push(eq(varieties.organisationId, organisationId));
+    }
+
     const result = await db
       .select()
       .from(varieties)
-      .where(
-        and(
-          eq(varieties.id, params.id),
-          eq(varieties.organisationId, session.user.organisationId)
-        )
-      );
+      .where(and(...conditions));
     variety = result[0];
   } catch (error) {
     console.error("Error fetching variety:", error);

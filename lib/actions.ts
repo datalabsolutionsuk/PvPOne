@@ -399,16 +399,6 @@ export async function uploadDocument(formData: FormData) {
     redirect("/dashboard/documents");
   }
 }
-    organisationId,
-    name,
-    type,
-    storagePath,
-    uploadedBy: session?.user?.id,
-  });
-
-  revalidatePath("/dashboard/documents");
-  redirect("/dashboard/documents");
-}
 
 // --- Admin Actions ---
 

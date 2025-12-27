@@ -7,7 +7,7 @@ import Link from "next/link";
 import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCurrentOrganisationId } from "@/lib/context";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function DashboardPage({
   searchParams,
@@ -15,8 +15,9 @@ export default async function DashboardPage({
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const organisationId = await getCurrentOrganisationId();
+  const isSuper = await isSuperAdmin();
   
-  if (!organisationId) {
+  if (!organisationId && !isSuper) {
     return <div>Unauthorized</div>;
   }
 
@@ -30,27 +31,39 @@ export default async function DashboardPage({
   let pendingTasksCount = 0;
   let totalDeadlines = 0;
 
+  // Helper to apply org filter if present
+  const orgFilter = (table: any) => organisationId ? eq(table.organisationId, organisationId) : undefined;
+
   try {
     // 1. App Stats
-    stats = await db
+    const statsQuery = db
       .select({
         status: applications.status,
         count: sql<number>`count(*)`,
       })
       .from(applications)
-      .where(eq(applications.organisationId, organisationId))
       .groupBy(applications.status);
+      
+    if (organisationId) {
+      statsQuery.where(eq(applications.organisationId, organisationId));
+    }
+    
+    stats = await statsQuery;
 
     // 2. Upcoming Deadlines (Count & Paginated)
+    const deadlinesConditions = [
+      eq(tasks.status, "PENDING"),
+      gte(tasks.dueDate, new Date())
+    ];
+    if (organisationId) {
+      deadlinesConditions.push(eq(applications.organisationId, organisationId));
+    }
+
     const deadlinesCountRes = await db
       .select({ count: sql<number>`count(*)` })
       .from(tasks)
       .innerJoin(applications, eq(tasks.applicationId, applications.id))
-      .where(and(
-        eq(tasks.status, "PENDING"),
-        gte(tasks.dueDate, new Date()),
-        eq(applications.organisationId, organisationId)
-      ));
+      .where(and(...deadlinesConditions));
     totalDeadlines = Number(deadlinesCountRes[0].count);
 
     const upcomingDeadlinesRaw = await db
@@ -64,11 +77,7 @@ export default async function DashboardPage({
       .innerJoin(applications, eq(tasks.applicationId, applications.id))
       .innerJoin(varieties, eq(applications.varietyId, varieties.id))
       .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
-      .where(and(
-        eq(tasks.status, "PENDING"),
-        gte(tasks.dueDate, new Date()),
-        eq(applications.organisationId, organisationId)
-      ))
+      .where(and(...deadlinesConditions))
       .orderBy(asc(tasks.dueDate))
       .limit(PAGE_SIZE)
       .offset((deadlinesPage - 1) * PAGE_SIZE);
@@ -83,21 +92,30 @@ export default async function DashboardPage({
     }));
 
     // 3. Total Varieties
-    const varietiesCount = await db
+    const varietiesQuery = db
       .select({ count: sql<number>`count(*)` })
-      .from(varieties)
-      .where(eq(varieties.organisationId, organisationId));
+      .from(varieties);
+      
+    if (organisationId) {
+      varietiesQuery.where(eq(varieties.organisationId, organisationId));
+    }
+    
+    const varietiesCount = await varietiesQuery;
     totalVarieties = Number(varietiesCount[0].count);
 
     // 4. Pending Tasks Count
+    const pendingTasksConditions = [
+      eq(tasks.status, "PENDING")
+    ];
+    if (organisationId) {
+      pendingTasksConditions.push(eq(applications.organisationId, organisationId));
+    }
+
     const tasksCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(tasks)
       .innerJoin(applications, eq(tasks.applicationId, applications.id))
-      .where(and(
-        eq(tasks.status, "PENDING"),
-        eq(applications.organisationId, organisationId)
-      ));
+      .where(and(...pendingTasksConditions));
     pendingTasksCount = Number(tasksCount[0].count);
 
   } catch (e) {

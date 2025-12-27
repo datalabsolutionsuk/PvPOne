@@ -13,12 +13,16 @@ import {
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export default function UploadDocumentPage() {
+export default function UploadDocumentPage({
+  searchParams,
+}: {
+  searchParams: { taskId?: string; type?: string };
+}) {
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <div className="flex items-center gap-4">
-        <Link href="/dashboard/documents">
+        <Link href={searchParams.taskId ? `/dashboard/tasks/${searchParams.taskId}` : "/dashboard/documents"}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -32,14 +36,23 @@ export default function UploadDocumentPage() {
         </CardHeader>
         <CardContent>
           <form action={uploadDocument} className="space-y-4">
+            {searchParams.taskId && (
+              <input type="hidden" name="taskId" value={searchParams.taskId} />
+            )}
             <div className="space-y-2">
               <Label htmlFor="name">Document Name</Label>
-              <Input id="name" name="name" required placeholder="e.g. Signed POA" />
+              <Input 
+                id="name" 
+                name="name" 
+                required 
+                placeholder="e.g. Signed POA" 
+                defaultValue={searchParams.type || ""}
+              />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="type">Document Type</Label>
-              <Select name="type" required>
+              <Select name="type" required defaultValue={searchParams.type ? "Other" : undefined}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>

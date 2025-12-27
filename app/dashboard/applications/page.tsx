@@ -95,7 +95,7 @@ export default async function ApplicationsPage({
             <TableBody>
               {paginatedApps.map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell className="font-medium">{app.appNumber || "Pending"}</TableCell>
+                  <TableCell className="font-medium">{app.appNumber || "N/A"}</TableCell>
                   <TableCell>{app.varietyName}</TableCell>
                   <TableCell>{app.jurisdictionCode}</TableCell>
                   <TableCell>{app.status}</TableCell>

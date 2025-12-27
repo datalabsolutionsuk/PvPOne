@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { tasks, applications, varieties, jurisdictions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { tasks, applications, varieties, jurisdictions, documents } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { completeTask } from "@/lib/actions";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Upload } from "lucide-react";
 
 export default async function TaskDetailsPage({
   params,
@@ -33,10 +33,16 @@ export default async function TaskDetailsPage({
     notFound();
   }
 
+  // Fetch documents linked to this task
+  const taskDocuments = await db.query.documents.findMany({
+    where: eq(documents.taskId, task.id),
+    orderBy: [desc(documents.createdAt)],
+  });
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/dashboard/tasks">
+        <Link href={`/dashboard/applications/${task.applicationId}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -81,49 +87,42 @@ export default async function TaskDetailsPage({
         </CardContent>
       </Card>
 
-      {task.type === "DOCUMENT" && task.status !== "COMPLETED" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Document</CardTitle>
-            <CardDescription>
-              Please upload the required document to complete this task.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={completeTask} className="space-y-4">
-              <input type="hidden" name="taskId" value={task.id} />
-              <div className="space-y-2">
-                <Label htmlFor="file">File</Label>
-                <Input 
-                  id="file" 
-                  name="file" 
-                  type="file" 
-                  required 
-                  accept=".doc,.docx,.pdf,.xls,.xlsx"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Accepted formats: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)
-                </p>
-              </div>
-              <Button type="submit">Upload & Complete</Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {task.status === "COMPLETED" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Completion Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-green-600 font-medium flex items-center gap-2">
-              ✓ Task completed
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Documents</CardTitle>
+          <Button asChild size="sm">
+            <Link href={`/dashboard/documents/upload?taskId=${task.id}&type=${task.title}`}>
+              <Upload className="mr-2 h-4 w-4" /> Upload Document
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {taskDocuments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No documents uploaded yet.
             </p>
-            {/* In a real app, we would show the uploaded file link here */}
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="space-y-2">
+              {taskDocuments.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-500" />
+                    <div>
+                      <p className="font-medium text-sm">{doc.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(doc.createdAt, "PP p")}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href="#" className="text-blue-600">Download</a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

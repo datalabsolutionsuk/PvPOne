@@ -77,6 +77,7 @@ export function Sidebar({
           <nav className="flex-1 space-y-2">
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/dashboard/applications">Applications</NavLink>
+            <NavLink href="/dashboard/tasks">Tasks</NavLink>
             <NavLink href="/dashboard/varieties">Varieties</NavLink>
             <NavLink href="/dashboard/jurisdictions">Jurisdictions</NavLink>
             <NavLink href="/dashboard/documents">Documents</NavLink>

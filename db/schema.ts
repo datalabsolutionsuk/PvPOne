@@ -228,6 +228,7 @@ export const documents = pgTable("documents", {
     .notNull()
     .references(() => organisations.id, { onDelete: "cascade" }),
   applicationId: uuid("application_id").references(() => applications.id),
+  taskId: uuid("task_id").references(() => tasks.id),
   name: text("name").notNull(),
   type: text("type").notNull(), // e.g., "POA", "Assignment"
   storagePath: text("storage_path").notNull(),

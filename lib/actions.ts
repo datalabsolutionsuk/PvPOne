@@ -338,6 +338,7 @@ export async function uploadDocument(formData: FormData) {
   const name = formData.get("name") as string;
   const type = formData.get("type") as string;
   const file = formData.get("file") as File;
+  const taskId = formData.get("taskId") as string | null;
 
   if (file) {
     const validTypes = [
@@ -345,11 +346,13 @@ export async function uploadDocument(formData: FormData) {
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/jpeg",
+      "image/png"
     ];
 
     if (!validTypes.includes(file.type)) {
-      throw new Error("Invalid file type. Only PDF, Word, and Excel documents are allowed.");
+      throw new Error("Invalid file type. Only PDF, Word, Excel, and Images (JPG, PNG) are allowed.");
     }
   }
 
@@ -358,6 +361,30 @@ export async function uploadDocument(formData: FormData) {
   const storagePath = `uploads/${Date.now()}_${name}`;
 
   await db.insert(documents).values({
+    organisationId,
+    name,
+    type,
+    storagePath,
+    uploadedBy: session?.user?.id,
+    taskId: taskId || null,
+  });
+
+  if (taskId) {
+    // If uploaded against a task, mark it as completed? 
+    // Or maybe just leave it pending until manually completed?
+    // The user said "enable uploading multiple files against a document name".
+    // So we shouldn't auto-complete.
+    revalidatePath(`/dashboard/tasks/${taskId}`);
+  }
+
+  revalidatePath("/dashboard/documents");
+  
+  if (taskId) {
+    redirect(`/dashboard/tasks/${taskId}`);
+  } else {
+    redirect("/dashboard/documents");
+  }
+}
     organisationId,
     name,
     type,

@@ -28,7 +28,7 @@ export default async function ApplicationsPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 10;
+  const pageSize = 5;
   const offset = (page - 1) * pageSize;
 
   let apps: {
@@ -144,8 +144,9 @@ export default async function ApplicationsPage({
         <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
           <div className="text-sm text-muted-foreground">
             Page {page} of {totalPages || 1} ({totalApps} total)
-          </div>
-          <div className="flex gap-2">
+          </div>          <div className="text-sm text-muted-foreground">
+            Showing {pageSize} items per page
+          </div>          <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 

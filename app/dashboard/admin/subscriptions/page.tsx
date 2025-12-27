@@ -30,7 +30,7 @@ export default async function AdminSubscriptionsPage({
   const planFilter = searchParams.plan || "all";
   const view = searchParams.view || "subscriptions";
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 7;
+  const pageSize = 5;
   const offset = (page - 1) * pageSize;
 
   // --- Subscriptions Logic ---
@@ -199,7 +199,10 @@ export default async function AdminSubscriptionsPage({
             </CardContent>
             <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
               <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages || 1}
+                Page {page} of {totalPages || 1} ({totalSubscriptions} total)
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Showing {pageSize} items per page
               </div>
               <div className="flex gap-2">
                 <Button 
@@ -287,7 +290,10 @@ export default async function AdminSubscriptionsPage({
             </CardContent>
             <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
               <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages || 1}
+                Page {page} of {totalPages || 1} ({totalPayments} total)
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Showing {pageSize} items per page
               </div>
               <div className="flex gap-2">
                 <Button 

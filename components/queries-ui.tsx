@@ -16,7 +16,7 @@ type Message = {
   content: string;
   senderId: string | null;
   createdAt: Date | string;
-  sender?: { name: string | null };
+  sender?: { name: string | null } | null;
 };
 
 type Query = {
@@ -25,7 +25,7 @@ type Query = {
   status: string;
   createdAt: Date | string;
   messages: Message[];
-  creator?: { name: string | null };
+  creator?: { name: string | null } | null;
 };
 
 export function QueriesUI({ 

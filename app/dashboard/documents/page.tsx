@@ -17,11 +17,12 @@ import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
 import { cookies } from "next/headers";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: { page?: string; limit?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
@@ -32,7 +33,7 @@ export default async function DocumentsPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 5;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
 
   let uploadedDocs: any[] = [];
@@ -238,9 +239,7 @@ export default async function DocumentsPage({
             <div className="text-sm text-muted-foreground">
               Page {page} of {totalPages || 1} ({totalItems} total)
             </div>
-            <div className="text-sm text-muted-foreground">
-              Showing {pageSize} items per page
-            </div>
+            <PaginationLimitSelect />
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -249,7 +248,7 @@ export default async function DocumentsPage({
                 asChild={page > 1}
               >
                 {page > 1 ? (
-                  <Link href={`/dashboard/documents?page=${page - 1}`}>Previous</Link>
+                  <Link href={`/dashboard/documents?page=${page - 1}&limit=${pageSize}`}>Previous</Link>
                 ) : "Previous"}
               </Button>
               <Button 
@@ -259,7 +258,7 @@ export default async function DocumentsPage({
                 asChild={page < totalPages}
               >
                 {page < totalPages ? (
-                  <Link href={`/dashboard/documents?page=${page + 1}`}>Next</Link>
+                  <Link href={`/dashboard/documents?page=${page + 1}&limit=${pageSize}`}>Next</Link>
                 ) : "Next"}
               </Button>
             </div>

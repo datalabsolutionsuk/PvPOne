@@ -15,11 +15,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function AdminSubscriptionsPage({
   searchParams,
 }: {
-  searchParams: { year?: string; plan?: string; view?: string; page?: string };
+  searchParams: { year?: string; plan?: string; view?: string; page?: string; limit?: string };
 }) {
   const session = await auth();
   if (session?.user?.role !== "SuperAdmin") {
@@ -30,7 +31,7 @@ export default async function AdminSubscriptionsPage({
   const planFilter = searchParams.plan || "all";
   const view = searchParams.view || "subscriptions";
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 5;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
 
   // --- Subscriptions Logic ---
@@ -201,9 +202,7 @@ export default async function AdminSubscriptionsPage({
               <div className="text-sm text-muted-foreground">
                 Page {page} of {totalPages || 1} ({totalSubscriptions} total)
               </div>
-              <div className="text-sm text-muted-foreground">
-                Showing {pageSize} items per page
-              </div>
+              <PaginationLimitSelect />
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
@@ -212,7 +211,7 @@ export default async function AdminSubscriptionsPage({
                   asChild={page > 1}
                 >
                   {page > 1 ? (
-                    <Link href={`/dashboard/admin/subscriptions?view=subscriptions&plan=${planFilter}&page=${page - 1}`}>Previous</Link>
+                    <Link href={`/dashboard/admin/subscriptions?view=subscriptions&plan=${planFilter}&page=${page - 1}&limit=${pageSize}`}>Previous</Link>
                   ) : "Previous"}
                 </Button>
                 <Button 
@@ -222,7 +221,7 @@ export default async function AdminSubscriptionsPage({
                   asChild={page < totalPages}
                 >
                   {page < totalPages ? (
-                    <Link href={`/dashboard/admin/subscriptions?view=subscriptions&plan=${planFilter}&page=${page + 1}`}>Next</Link>
+                    <Link href={`/dashboard/admin/subscriptions?view=subscriptions&plan=${planFilter}&page=${page + 1}&limit=${pageSize}`}>Next</Link>
                   ) : "Next"}
                 </Button>
               </div>
@@ -292,9 +291,7 @@ export default async function AdminSubscriptionsPage({
               <div className="text-sm text-muted-foreground">
                 Page {page} of {totalPages || 1} ({totalPayments} total)
               </div>
-              <div className="text-sm text-muted-foreground">
-                Showing {pageSize} items per page
-              </div>
+              <PaginationLimitSelect />
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
@@ -303,7 +300,7 @@ export default async function AdminSubscriptionsPage({
                   asChild={page > 1}
                 >
                   {page > 1 ? (
-                    <Link href={`/dashboard/admin/subscriptions?view=payments&year=${year}&page=${page - 1}`}>Previous</Link>
+                    <Link href={`/dashboard/admin/subscriptions?view=payments&year=${year}&page=${page - 1}&limit=${pageSize}`}>Previous</Link>
                   ) : "Previous"}
                 </Button>
                 <Button 
@@ -313,7 +310,7 @@ export default async function AdminSubscriptionsPage({
                   asChild={page < totalPages}
                 >
                   {page < totalPages ? (
-                    <Link href={`/dashboard/admin/subscriptions?view=payments&year=${year}&page=${page + 1}`}>Next</Link>
+                    <Link href={`/dashboard/admin/subscriptions?view=payments&year=${year}&page=${page + 1}&limit=${pageSize}`}>Next</Link>
                   ) : "Next"}
                 </Button>
               </div>

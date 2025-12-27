@@ -14,11 +14,12 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Card, CardContent } from "@/components/ui/card";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string };
+  searchParams: { status?: string; page?: string; limit?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const isSuper = await isSuperAdmin();
@@ -28,7 +29,7 @@ export default async function ApplicationsPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 5;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
 
   let apps: {
@@ -144,9 +145,9 @@ export default async function ApplicationsPage({
         <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
           <div className="text-sm text-muted-foreground">
             Page {page} of {totalPages || 1} ({totalApps} total)
-          </div>          <div className="text-sm text-muted-foreground">
-            Showing {pageSize} items per page
-          </div>          <div className="flex gap-2">
+          </div>
+          <PaginationLimitSelect />
+          <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -154,7 +155,7 @@ export default async function ApplicationsPage({
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/dashboard/applications?page=${page - 1}${searchParams.status ? `&status=${searchParams.status}` : ''}`}>Previous</Link>
+                <Link href={`/dashboard/applications?page=${page - 1}&limit=${pageSize}${searchParams.status ? `&status=${searchParams.status}` : ''}`}>Previous</Link>
               ) : "Previous"}
             </Button>
             <Button 
@@ -164,7 +165,7 @@ export default async function ApplicationsPage({
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/dashboard/applications?page=${page + 1}${searchParams.status ? `&status=${searchParams.status}` : ''}`}>Next</Link>
+                <Link href={`/dashboard/applications?page=${page + 1}&limit=${pageSize}${searchParams.status ? `&status=${searchParams.status}` : ''}`}>Next</Link>
               ) : "Next"}
             </Button>
           </div>

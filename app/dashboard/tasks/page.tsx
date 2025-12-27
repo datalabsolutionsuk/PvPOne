@@ -16,11 +16,12 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { cookies } from "next/headers";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: { filter?: string; page?: string };
+  searchParams: { filter?: string; page?: string; limit?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
@@ -31,7 +32,7 @@ export default async function TasksPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 5;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
 
   let taskList: any[] = [];
@@ -153,9 +154,7 @@ export default async function TasksPage({
           <div className="text-sm text-muted-foreground">
             Page {page} of {totalPages || 1} ({totalItems} total)
           </div>
-          <div className="text-sm text-muted-foreground">
-            Showing {pageSize} items per page
-          </div>
+          <PaginationLimitSelect />
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -164,7 +163,7 @@ export default async function TasksPage({
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/dashboard/tasks?page=${page - 1}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Previous</Link>
+                <Link href={`/dashboard/tasks?page=${page - 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Previous</Link>
               ) : "Previous"}
             </Button>
             <Button 
@@ -174,7 +173,7 @@ export default async function TasksPage({
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/dashboard/tasks?page=${page + 1}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Next</Link>
+                <Link href={`/dashboard/tasks?page=${page + 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Next</Link>
               ) : "Next"}
             </Button>
           </div>

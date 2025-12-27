@@ -14,11 +14,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { format } from "date-fns";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
 export default async function VarietiesPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: { page?: string; limit?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const isSuper = await isSuperAdmin();
@@ -28,7 +29,7 @@ export default async function VarietiesPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
-  const pageSize = 5;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
 
   let data: any[] = [];
@@ -104,9 +105,7 @@ export default async function VarietiesPage({
           <div className="text-sm text-muted-foreground">
             Page {page} of {totalPages || 1} ({totalItems} total)
           </div>
-          <div className="text-sm text-muted-foreground">
-            Showing {pageSize} items per page
-          </div>
+          <PaginationLimitSelect />
           <div className="flex gap-2">
             <Button 
               variant="outline" 
@@ -115,7 +114,7 @@ export default async function VarietiesPage({
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/dashboard/varieties?page=${page - 1}`}>Previous</Link>
+                <Link href={`/dashboard/varieties?page=${page - 1}&limit=${pageSize}`}>Previous</Link>
               ) : "Previous"}
             </Button>
             <Button 
@@ -125,7 +124,7 @@ export default async function VarietiesPage({
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/dashboard/varieties?page=${page + 1}`}>Next</Link>
+                <Link href={`/dashboard/varieties?page=${page + 1}&limit=${pageSize}`}>Next</Link>
               ) : "Next"}
             </Button>
           </div>

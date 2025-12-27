@@ -408,7 +408,7 @@ export async function uploadDocument(formData: FormData) {
   const storagePath = `uploads/${Date.now()}_${name}`;
 
   await db.insert(documents).values({
-    organisationId,
+    organisationId: organisationId as string,
     name,
     type,
     storagePath,
@@ -563,7 +563,7 @@ export async function createTask(formData: FormData) {
         await fs.writeFile(path.join(uploadDir, filename), buffer);
         
         await db.insert(documents).values({
-          organisationId,
+          organisationId: organisationId as string,
           applicationId,
           taskId: taskId,
           name: file.name,

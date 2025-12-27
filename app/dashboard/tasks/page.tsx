@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { tasks, applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, gte, asc } from "drizzle-orm";
+import { eq, and, gte, asc, ne } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -32,7 +32,10 @@ export default async function TasksPage({
 
   let taskList: any[] = [];
   try {
-    const conditions = [eq(applications.organisationId, organisationId)];
+    const conditions = [
+      eq(applications.organisationId, organisationId),
+      ne(tasks.type, "DOCUMENT")
+    ];
     
     if (searchParams.filter === "urgent") {
       conditions.push(eq(tasks.status, "PENDING"));

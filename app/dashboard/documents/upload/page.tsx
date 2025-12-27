@@ -16,13 +16,19 @@ import { ArrowLeft } from "lucide-react";
 export default function UploadDocumentPage({
   searchParams,
 }: {
-  searchParams: { taskId?: string; type?: string };
+  searchParams: { taskId?: string; type?: string; applicationId?: string };
 }) {
+  const backLink = searchParams.taskId 
+    ? `/dashboard/tasks/${searchParams.taskId}` 
+    : searchParams.applicationId 
+      ? `/dashboard/applications/${searchParams.applicationId}`
+      : "/dashboard/documents";
+
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <div className="flex items-center gap-4">
-        <Link href={searchParams.taskId ? `/dashboard/tasks/${searchParams.taskId}` : "/dashboard/documents"}>
+        <Link href={backLink}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -38,6 +44,9 @@ export default function UploadDocumentPage({
           <form action={uploadDocument} className="space-y-4">
             {searchParams.taskId && (
               <input type="hidden" name="taskId" value={searchParams.taskId} />
+            )}
+            {searchParams.applicationId && (
+              <input type="hidden" name="applicationId" value={searchParams.applicationId} />
             )}
             <div className="space-y-2">
               <Label htmlFor="name">Document Name</Label>

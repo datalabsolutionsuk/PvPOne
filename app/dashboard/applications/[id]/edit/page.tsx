@@ -85,6 +85,16 @@ export default async function EditApplicationPage({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="applicationNumber">Application Number</Label>
+              <Input 
+                id="applicationNumber" 
+                name="applicationNumber" 
+                defaultValue={app.applicationNumber || ""} 
+                placeholder="e.g. 12345/2025"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="filingDate">Filing Date</Label>
               <Input 
                 type="date" 

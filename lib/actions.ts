@@ -104,6 +104,7 @@ export async function updateApplication(formData: FormData) {
   const varietyId = formData.get("varietyId") as string;
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
+  const applicationNumber = formData.get("applicationNumber") as string;
   const status = formData.get("status") as any;
   const filingDate = filingDateStr ? new Date(filingDateStr) : null;
 
@@ -113,6 +114,7 @@ export async function updateApplication(formData: FormData) {
       varietyId,
       jurisdictionId,
       filingDate,
+      applicationNumber: applicationNumber || null,
       status,
     })
     .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
@@ -338,7 +340,8 @@ export async function uploadDocument(formData: FormData) {
   const name = formData.get("name") as string;
   const type = formData.get("type") as string;
   const file = formData.get("file") as File;
-  const taskId = formData.get("taskId") as string | null;
+  let taskId = formData.get("taskId") as string | null;
+  const applicationId = formData.get("applicationId") as string | null;
 
   if (file) {
     const validTypes = [
@@ -356,6 +359,18 @@ export async function uploadDocument(formData: FormData) {
     }
   }
 
+  // If uploaded directly to an application (no task), create a completed task for it
+  if (applicationId && !taskId) {
+     const [newTask] = await db.insert(tasks).values({
+        applicationId,
+        title: name,
+        type: "DOCUMENT",
+        status: "COMPLETED",
+        dueDate: new Date(),
+     }).returning({ id: tasks.id });
+     taskId = newTask.id;
+  }
+
   // In a real app, we would handle the file upload here.
   // For MVP, we'll just simulate it.
   const storagePath = `uploads/${Date.now()}_${name}`;
@@ -367,21 +382,20 @@ export async function uploadDocument(formData: FormData) {
     storagePath,
     uploadedBy: session?.user?.id,
     taskId: taskId || null,
+    applicationId: applicationId || null,
   });
 
   if (taskId) {
-    // If uploaded against a task, mark it as completed? 
-    // Or maybe just leave it pending until manually completed?
-    // The user said "enable uploading multiple files against a document name".
-    // So we shouldn't auto-complete.
     revalidatePath(`/dashboard/tasks/${taskId}`);
   }
-
-  revalidatePath("/dashboard/documents");
   
-  if (taskId) {
+  if (applicationId) {
+    revalidatePath(`/dashboard/applications/${applicationId}`);
+    redirect(`/dashboard/applications/${applicationId}`);
+  } else if (taskId) {
     redirect(`/dashboard/tasks/${taskId}`);
   } else {
+    revalidatePath("/dashboard/documents");
     redirect("/dashboard/documents");
   }
 }

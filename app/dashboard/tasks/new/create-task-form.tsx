@@ -59,6 +59,16 @@ export default function CreateTaskForm({
         <Input id="dueDate" name="dueDate" type="date" />
       </div>
 
+      {type === "DOCUMENT" && (
+        <div className="space-y-2 pt-2 border-t">
+          <Label htmlFor="file">Upload Document (Optional)</Label>
+          <Input id="file" name="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+          <p className="text-xs text-muted-foreground">
+            If you upload a file now, the requirement will be marked as COMPLETED.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 pt-4">
         <Button asChild variant="outline">
           <Link href={`/dashboard/applications/${applicationId}`}>Cancel</Link>

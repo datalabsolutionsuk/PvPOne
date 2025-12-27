@@ -11,13 +11,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { updateTask } from "@/lib/actions";
 import Link from "next/link";
 import { format } from "date-fns";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function EditTaskPage({ params }: { params: { id: string } }) {
   const task = await db.query.tasks.findFirst({
     where: eq(tasks.id, params.id),
+    with: {
+      application: true,
+    }
   });
 
   if (!task) {
+    notFound();
+  }
+
+  const organisationId = await getCurrentOrganisationId();
+  const superAdmin = await isSuperAdmin();
+
+  if (!superAdmin && task.application.organisationId !== organisationId) {
     notFound();
   }
 
@@ -66,7 +77,7 @@ export default async function EditTaskPage({ params }: { params: { id: string } 
 
             <div className="flex justify-end gap-2 pt-4">
               <Button asChild variant="outline">
-                <Link href={`/dashboard/applications/${task.applicationId}`}>Cancel</Link>
+                <Link href={`/dashboard/tasks/${task.id}`}>Cancel</Link>
               </Button>
               <Button type="submit">Save Changes</Button>
             </div>

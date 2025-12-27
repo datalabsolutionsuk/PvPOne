@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { applications } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import CreateTaskForm from "./create-task-form";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function NewTaskPage({
   searchParams,
@@ -23,6 +24,13 @@ export default async function NewTaskPage({
   });
 
   if (!application) {
+    redirect("/dashboard/applications");
+  }
+
+  const organisationId = await getCurrentOrganisationId();
+  const superAdmin = await isSuperAdmin();
+
+  if (!superAdmin && application.organisationId !== organisationId) {
     redirect("/dashboard/applications");
   }
 

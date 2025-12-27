@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { completeTask } from "@/lib/actions";
 import { ArrowLeft, FileText, Upload } from "lucide-react";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function TaskDetailsPage({
   params,
@@ -33,6 +34,13 @@ export default async function TaskDetailsPage({
     notFound();
   }
 
+  const organisationId = await getCurrentOrganisationId();
+  const superAdmin = await isSuperAdmin();
+
+  if (!superAdmin && task.application.organisationId !== organisationId) {
+    notFound();
+  }
+
   // Fetch documents linked to this task
   const taskDocuments = await db.query.documents.findMany({
     where: eq(documents.taskId, task.id),
@@ -49,9 +57,25 @@ export default async function TaskDetailsPage({
         </Link>
         <div className="flex-1 flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight">Task Details</h2>
-          <Badge variant={task.status === "COMPLETED" ? "default" : "secondary"}>
-            {task.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Link href={`/dashboard/documents/upload?taskId=${task.id}&type=${task.title}`}>
+              <Button size="sm">
+                <Upload className="mr-2 h-4 w-4" /> Upload
+              </Button>
+            </Link>
+            <Link href={`/dashboard/tasks/${task.id}/edit`}>
+              <Button variant="outline" size="sm">Edit</Button>
+            </Link>
+            <Badge 
+              className={
+                task.status === "COMPLETED" 
+                  ? "bg-green-100 text-green-800 hover:bg-green-100 border-green-200" 
+                  : "bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200"
+              }
+            >
+              {task.status}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -88,13 +112,8 @@ export default async function TaskDetailsPage({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Documents</CardTitle>
-          <Button asChild size="sm">
-            <Link href={`/dashboard/documents/upload?taskId=${task.id}&type=${task.title}`}>
-              <Upload className="mr-2 h-4 w-4" /> Upload Document
-            </Link>
-          </Button>
         </CardHeader>
         <CardContent>
           {taskDocuments.length === 0 ? (

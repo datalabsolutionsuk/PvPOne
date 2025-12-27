@@ -14,7 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import Link from "next/link";
-import { getCurrentOrganisationId } from "@/lib/context";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function TasksPage({
   searchParams,
@@ -22,7 +22,20 @@ export default async function TasksPage({
   searchParams: { filter?: string; page?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
+  const superAdmin = await isSuperAdmin();
+
   if (!organisationId) {
+    if (superAdmin) {
+      return (
+        <div className="p-8 text-center">
+          <h2 className="text-xl font-semibold mb-2">Admin View</h2>
+          <p className="text-muted-foreground mb-4">Please select an organisation to view their tasks.</p>
+          <Button asChild>
+            <Link href="/dashboard/admin/organisations">Go to Organisations</Link>
+          </Button>
+        </div>
+      );
+    }
     return <div>Unauthorized</div>;
   }
 

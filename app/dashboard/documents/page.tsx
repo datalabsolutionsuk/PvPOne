@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { format } from "date-fns";
-import { getCurrentOrganisationId } from "@/lib/context";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
 
@@ -23,7 +23,20 @@ export default async function DocumentsPage({
   searchParams: { page?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
+  const superAdmin = await isSuperAdmin();
+
   if (!organisationId) {
+    if (superAdmin) {
+      return (
+        <div className="p-8 text-center">
+          <h2 className="text-xl font-semibold mb-2">Admin View</h2>
+          <p className="text-muted-foreground mb-4">Please select an organisation to view their documents.</p>
+          <Button asChild>
+            <Link href="/dashboard/admin/organisations">Go to Organisations</Link>
+          </Button>
+        </div>
+      );
+    }
     return <div>Unauthorized</div>;
   }
 

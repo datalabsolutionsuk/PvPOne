@@ -94,7 +94,8 @@ export function Sidebar({
                 </div>
                 <NavLink href="/dashboard/admin/organisations">Organisations</NavLink>
                 <NavLink href="/dashboard/admin/users">Users</NavLink>
-                <NavLink href="/dashboard/admin/documents">All Documents</NavLink>
+                <NavLink href="/dashboard/tasks">All Tasks</NavLink>
+                <NavLink href="/dashboard/documents">All Documents</NavLink>
                 <NavLink href="/dashboard/admin/subscriptions">Subscriptions</NavLink>
                 <NavLink href="/dashboard/admin/settings">Settings</NavLink>
               </>

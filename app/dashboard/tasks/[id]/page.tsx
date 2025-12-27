@@ -56,8 +56,8 @@ export default async function TaskDetailsPage({
           </Button>
         </Link>
         <div className="flex-1 flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">Task Details</h2>
-          <div className="flex items-center gap-2">
+          <h2 className="text-3xl font-bold tracking-tight mr-4">Task Details</h2>
+          <div className="flex items-center gap-4">
             <Link href={`/dashboard/documents/upload?taskId=${task.id}&type=${task.title}`}>
               <Button size="sm">
                 <Upload className="mr-2 h-4 w-4" /> Upload

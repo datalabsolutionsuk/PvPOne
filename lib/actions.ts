@@ -67,6 +67,7 @@ export async function createApplication(formData: FormData) {
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
   const filingDate = filingDateStr ? new Date(filingDateStr) : new Date();
+  const applicationNumber = formData.get("applicationNumber") as string;
 
   // 1. Create Application
   const [app] = await db
@@ -77,6 +78,7 @@ export async function createApplication(formData: FormData) {
       jurisdictionId,
       status: "Filed", // Assuming we are filing immediately for MVP flow
       filingDate: filingDate,
+      applicationNumber: applicationNumber || null,
     })
     .returning();
 

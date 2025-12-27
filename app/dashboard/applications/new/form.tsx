@@ -93,6 +93,11 @@ export function NewApplicationForm({ varieties, jurisdictions }: NewApplicationF
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="applicationNumber">Application Number</Label>
+        <Input name="applicationNumber" placeholder="e.g. 12345" />
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="filingDate">Filing Date</Label>
         <Input type="date" name="filingDate" required />
       </div>

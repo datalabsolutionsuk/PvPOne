@@ -59,10 +59,10 @@ export default function UploadDocumentPage() {
                 name="file" 
                 type="file" 
                 required 
-                accept=".doc,.docx,.pdf,.xls,.xlsx"
+                accept=".doc,.docx,.pdf,.xls,.xlsx,.jpg,.jpeg,.png"
               />
               <p className="text-xs text-muted-foreground">
-                Accepted formats: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)
+                Accepted formats: PDF, Word, Excel, Images (JPG, PNG)
               </p>
             </div>
 

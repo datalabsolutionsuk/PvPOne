@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/table";
 import { TaskActions, AddTaskButton } from "./actions";
 
+import { ArrowLeft } from "lucide-react";
+
 export default async function ApplicationDetailsPage({
   params,
 }: {
@@ -45,19 +47,26 @@ export default async function ApplicationDetailsPage({
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="space-y-6 pb-8">
-        <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">
-          Application Details
-        </h2>
-        <div className="flex items-center gap-2">
-          <Badge variant={app.status === "Filed" ? "default" : "secondary"}>
-            {app.status}
-          </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/applications/${app.id}/edit`}>Edit</Link>
-          </Button>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/applications">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="flex-1 flex items-center justify-between">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Application Details
+            </h2>
+            <div className="flex items-center gap-2">
+              <Badge variant={app.status === "Filed" ? "default" : "secondary"}>
+                {app.status}
+              </Badge>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dashboard/applications/${app.id}/edit`}>Edit</Link>
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>

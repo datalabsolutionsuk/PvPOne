@@ -458,6 +458,45 @@ export async function createTask(formData: FormData) {
   redirect(`/dashboard/applications/${applicationId}`);
 }
 
+export async function updateTask(formData: FormData) {
+  const session = await auth();
+  const organisationId = await getCurrentOrganisationId();
+
+  if (!session?.user || !organisationId) {
+    throw new Error("Unauthorized");
+  }
+
+  const id = formData.get("id") as string;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const dueDateStr = formData.get("dueDate") as string;
+  const status = formData.get("status") as string;
+
+  // Verify task belongs to organisation
+  const task = await db.query.tasks.findFirst({
+    where: eq(tasks.id, id),
+    with: {
+      application: true,
+    },
+  });
+
+  if (!task || task.application.organisationId !== organisationId) {
+    throw new Error("Task not found or unauthorized");
+  }
+
+  await db.update(tasks).set({
+    title,
+    description,
+    dueDate: dueDateStr ? new Date(dueDateStr) : null,
+    status,
+  }).where(eq(tasks.id, id));
+
+  revalidatePath(`/dashboard/applications/${task.applicationId}`);
+  revalidatePath(`/dashboard/tasks/${id}`);
+  revalidatePath(`/dashboard/tasks`);
+  redirect(`/dashboard/applications/${task.applicationId}`);
+}
+
 // --- Impersonation Actions ---
 
 import { cookies } from "next/headers";

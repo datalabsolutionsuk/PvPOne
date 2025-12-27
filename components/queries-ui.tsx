@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { createQuery, replyToQuery } from "@/lib/actions";
+import { createQuery, replyToQuery, getApplicationQueries } from "@/lib/actions";
 import { format } from "date-fns";
-import { MessageSquare, Plus, Send } from "lucide-react";
+import { MessageSquare, Plus, Send, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +24,7 @@ type Query = {
   title: string;
   status: string;
   createdAt: Date | string;
+  updatedAt?: Date | string;
   messages: Message[];
   creator?: { name: string | null } | null;
 };
@@ -41,12 +42,34 @@ export function QueriesUI({
   const [queries, setQueries] = useState(initialQueries);
   const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Form states
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [replyContent, setReplyContent] = useState("");
 
+  // Polling ref to avoid closure staleness if needed, though simple effect works here
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      // Silent refresh
+      try {
+        const freshQueries = await getApplicationQueries(applicationId);
+        setQueries(prev => {
+          // Only update if different to avoid re-renders? 
+          // For simplicity, we just update. React handles diffing.
+          // We need to preserve the selectedQueryId if it still exists
+          return freshQueries;
+        });
+      } catch (e) {
+        console.error("Polling failed", e);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [applicationId]);
+
+  // Also update when initialQueries changes (e.g. from server revalidation)
   useEffect(() => {
     setQueries(initialQueries);
   }, [initialQueries]);
@@ -60,6 +83,10 @@ export function QueriesUI({
     setIsCreating(false);
     setNewTitle("");
     setNewContent("");
+    
+    // Immediate fetch to update UI
+    const fresh = await getApplicationQueries(applicationId);
+    setQueries(fresh);
     router.refresh();
   };
 
@@ -67,7 +94,18 @@ export function QueriesUI({
     if (!selectedQueryId || !replyContent) return;
     await replyToQuery(selectedQueryId, replyContent, applicationId);
     setReplyContent("");
+    
+    // Immediate fetch
+    const fresh = await getApplicationQueries(applicationId);
+    setQueries(fresh);
     router.refresh();
+  };
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    const fresh = await getApplicationQueries(applicationId);
+    setQueries(fresh);
+    setIsRefreshing(false);
   };
 
   return (
@@ -75,7 +113,12 @@ export function QueriesUI({
       {/* List Column */}
       <div className="md:col-span-1 border-r pr-4 flex flex-col h-full">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-lg">Queries</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-lg">Queries</h3>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleManualRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
           <Button size="sm" onClick={() => { setIsCreating(true); setSelectedQueryId(null); }}>
             <Plus className="h-4 w-4 mr-1" /> New
           </Button>

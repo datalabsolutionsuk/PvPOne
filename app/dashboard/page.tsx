@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
+import { DashboardQueriesList } from "@/components/dashboard-queries-list";
 
 export default async function DashboardPage({
   searchParams,
@@ -146,6 +147,16 @@ export default async function DashboardPage({
       .orderBy(desc(queries.updatedAt))
       .limit(PAGE_SIZE)
       .offset((queriesPage - 1) * PAGE_SIZE);
+
+    // Serialize dates for client component
+    recentQueries = recentQueries.map(({ query, application }) => ({
+      query: {
+        ...query,
+        createdAt: query.createdAt.toISOString(),
+        updatedAt: query.updatedAt.toISOString(),
+      },
+      application
+    }));
 
   } catch (e) {
     console.error("Failed to fetch dashboard stats", e);
@@ -343,65 +354,12 @@ export default async function DashboardPage({
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm flex flex-col h-full overflow-hidden">
-          <CardHeader className="flex-shrink-0">
-            <CardTitle>Recent Queries</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              {recentQueries.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent queries.</p>
-              ) : (
-                recentQueries.map(({ query, application }) => (
-                  <Link 
-                    key={query.id} 
-                    href={`/dashboard/applications/${application.id}`}
-                    className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold truncate max-w-[150px]">{query.title}</h4>
-                        <p className="text-sm text-muted-foreground">{application.referenceNumber || application.variety?.name || "App"}</p>
-                      </div>
-                      <Badge variant={query.status === "Open" ? "default" : "secondary"}>
-                        {query.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center text-xs text-muted-foreground mt-2">
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      {format(query.updatedAt, "MMM d, h:mm a")}
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-
-            <div className="flex-shrink-0 flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Page {queriesPage} of {Math.max(1, totalQueriesPages)}
-              </div>
-              <PaginationLimitSelect pageParam={["statusPage", "deadlinesPage", "queriesPage"]} />
-              <div className="flex gap-2">
-                <Link
-                  href={`/dashboard?queriesPage=${Math.max(1, queriesPage - 1)}&statusPage=${statusPage}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
-                  className={queriesPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                >
-                  <Button variant="outline" size="icon" disabled={queriesPage <= 1} className="h-8 w-8">
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link
-                  href={`/dashboard?queriesPage=${Math.min(totalQueriesPages, queriesPage + 1)}&statusPage=${statusPage}&deadlinesPage=${deadlinesPage}&limit=${PAGE_SIZE}`}
-                  className={queriesPage >= totalQueriesPages ? "pointer-events-none opacity-50" : ""}
-                >
-                  <Button variant="outline" size="icon" disabled={queriesPage >= totalQueriesPages} className="h-8 w-8">
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <DashboardQueriesList 
+          initialQueries={recentQueries}
+          totalQueries={totalQueries}
+          page={queriesPage}
+          limit={PAGE_SIZE}
+        />
       </div>
 
       {pendingTasksCount > 0 && (

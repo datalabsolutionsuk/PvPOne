@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import path from "path";
 import { promises as fs } from "fs";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 export async function createVariety(formData: FormData) {
   const organisationId = await getCurrentOrganisationId();
@@ -752,5 +752,68 @@ export async function replyToQuery(queryId: string, content: string, application
   });
 
   revalidatePath(`/dashboard/applications/${applicationId}`);
+}
+
+export async function getApplicationQueries(applicationId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const appQueries = await db.query.queries.findMany({
+    where: eq(queries.applicationId, applicationId),
+    with: {
+      creator: true,
+      messages: {
+        orderBy: [asc(messages.createdAt)],
+        with: {
+          sender: true
+        }
+      }
+    },
+    orderBy: [desc(queries.updatedAt)] // Sort by recently updated
+  });
+
+  // Serialize dates for client components
+  return appQueries.map(q => ({
+    ...q,
+    createdAt: q.createdAt.toISOString(),
+    updatedAt: q.updatedAt.toISOString(),
+    messages: q.messages.map(m => ({
+      ...m,
+      createdAt: m.createdAt.toISOString()
+    }))
+  }));
+}
+
+export async function getDashboardQueries(page: number = 1, limit: number = 5) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  
+  const organisationId = await getCurrentOrganisationId();
+  
+  const queriesConditions = [];
+  if (organisationId) {
+    queriesConditions.push(eq(applications.organisationId, organisationId));
+  }
+
+  const recentQueries = await db
+    .select({
+      query: queries,
+      application: applications,
+    })
+    .from(queries)
+    .innerJoin(applications, eq(queries.applicationId, applications.id))
+    .where(and(...queriesConditions))
+    .orderBy(desc(queries.updatedAt))
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  return recentQueries.map(({ query, application }) => ({
+    query: {
+      ...query,
+      createdAt: query.createdAt.toISOString(),
+      updatedAt: query.updatedAt.toISOString(),
+    },
+    application
+  }));
 }
 

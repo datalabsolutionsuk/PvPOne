@@ -25,18 +25,7 @@ export default async function DocumentsPage({
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
 
-  if (!organisationId) {
-    if (superAdmin) {
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">Admin View</h2>
-          <p className="text-muted-foreground mb-4">Please select an organisation to view their documents.</p>
-          <Button asChild>
-            <Link href="/dashboard/admin/organisations">Go to Organisations</Link>
-          </Button>
-        </div>
-      );
-    }
+  if (!organisationId && !superAdmin) {
     return <div>Unauthorized</div>;
   }
 
@@ -48,6 +37,17 @@ export default async function DocumentsPage({
   let requiredDocs: any[] = [];
 
   try {
+    const uploadedConditions = [];
+    const requiredConditions = [
+      eq(tasks.type, "DOCUMENT"),
+      eq(tasks.status, "PENDING")
+    ];
+
+    if (organisationId) {
+      uploadedConditions.push(eq(documents.organisationId, organisationId));
+      requiredConditions.push(eq(applications.organisationId, organisationId));
+    }
+
     const [uploaded, required] = await Promise.all([
       db
         .select({
@@ -61,7 +61,7 @@ export default async function DocumentsPage({
         .from(documents)
         .leftJoin(applications, eq(documents.applicationId, applications.id))
         .leftJoin(varieties, eq(applications.varietyId, varieties.id))
-        .where(eq(documents.organisationId, organisationId))
+        .where(and(...uploadedConditions))
         .orderBy(desc(documents.createdAt)),
       
       db
@@ -79,11 +79,7 @@ export default async function DocumentsPage({
         .innerJoin(applications, eq(tasks.applicationId, applications.id))
         .innerJoin(varieties, eq(applications.varietyId, varieties.id))
         .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
-        .where(and(
-          eq(applications.organisationId, organisationId),
-          eq(tasks.type, "DOCUMENT"),
-          eq(tasks.status, "PENDING")
-        ))
+        .where(and(...requiredConditions))
         .orderBy(tasks.dueDate)
     ]);
 

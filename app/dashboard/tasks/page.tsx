@@ -24,18 +24,7 @@ export default async function TasksPage({
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
 
-  if (!organisationId) {
-    if (superAdmin) {
-      return (
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">Admin View</h2>
-          <p className="text-muted-foreground mb-4">Please select an organisation to view their tasks.</p>
-          <Button asChild>
-            <Link href="/dashboard/admin/organisations">Go to Organisations</Link>
-          </Button>
-        </div>
-      );
-    }
+  if (!organisationId && !superAdmin) {
     return <div>Unauthorized</div>;
   }
 
@@ -46,9 +35,12 @@ export default async function TasksPage({
   let taskList: any[] = [];
   try {
     const conditions = [
-      eq(applications.organisationId, organisationId),
       ne(tasks.type, "DOCUMENT")
     ];
+    
+    if (organisationId) {
+      conditions.push(eq(applications.organisationId, organisationId));
+    }
     
     if (searchParams.filter === "urgent") {
       conditions.push(eq(tasks.status, "PENDING"));

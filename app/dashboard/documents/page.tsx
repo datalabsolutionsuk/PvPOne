@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
+import { cookies } from "next/headers";
 
 export default async function DocumentsPage({
   searchParams,
@@ -24,6 +25,7 @@ export default async function DocumentsPage({
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
+  const isImpersonating = cookies().has("admin_org_context");
 
   if (!organisationId && !superAdmin) {
     return <div>Unauthorized</div>;
@@ -43,7 +45,7 @@ export default async function DocumentsPage({
       eq(tasks.status, "PENDING")
     ];
 
-    if (organisationId) {
+    if (organisationId && (!superAdmin || isImpersonating)) {
       uploadedConditions.push(eq(documents.organisationId, organisationId));
       requiredConditions.push(eq(applications.organisationId, organisationId));
     }

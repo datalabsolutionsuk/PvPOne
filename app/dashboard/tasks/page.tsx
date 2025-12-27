@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import Link from "next/link";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
+import { cookies } from "next/headers";
 
 export default async function TasksPage({
   searchParams,
@@ -23,6 +24,7 @@ export default async function TasksPage({
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
+  const isImpersonating = cookies().has("admin_org_context");
 
   if (!organisationId && !superAdmin) {
     return <div>Unauthorized</div>;
@@ -38,7 +40,11 @@ export default async function TasksPage({
       ne(tasks.type, "DOCUMENT")
     ];
     
-    if (organisationId) {
+    // Only filter by organisation if:
+    // 1. User is NOT a super admin (must see their own org)
+    // 2. User IS a super admin BUT is impersonating (must see target org)
+    // If Super Admin AND NOT impersonating -> Show ALL (Global View)
+    if (organisationId && (!superAdmin || isImpersonating)) {
       conditions.push(eq(applications.organisationId, organisationId));
     }
     

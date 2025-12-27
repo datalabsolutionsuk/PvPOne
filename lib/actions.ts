@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements } from "@/db/schema";
+import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements, queries, messages } from "@/db/schema";
 import { auth, signIn } from "@/lib/auth";
 import { getCurrentOrganisationId } from "@/lib/context";
 import { AuthError } from "next-auth";
@@ -713,5 +713,38 @@ export async function switchOrganisation(orgId: string) {
 export async function exitOrganisationView() {
   cookies().delete("admin_org_context");
   redirect("/dashboard/admin/organisations");
+}
+
+export async function createQuery(applicationId: string, title: string, content: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const [newQuery] = await db.insert(queries).values({
+    applicationId,
+    title,
+    createdBy: session.user.id,
+  }).returning();
+
+  await db.insert(messages).values({
+    queryId: newQuery.id,
+    content,
+    senderId: session.user.id,
+  });
+
+  revalidatePath(`/dashboard/applications/${applicationId}`);
+  return newQuery;
+}
+
+export async function replyToQuery(queryId: string, content: string, applicationId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  await db.insert(messages).values({
+    queryId,
+    content,
+    senderId: session.user.id,
+  });
+
+  revalidatePath(`/dashboard/applications/${applicationId}`);
 }
 

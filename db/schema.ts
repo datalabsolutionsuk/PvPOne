@@ -276,6 +276,28 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+export const queries = pgTable("queries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  applicationId: uuid("application_id")
+    .notNull()
+    .references(() => applications.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  status: text("status").default("Open").notNull(), // Open, Closed
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
+export const messages = pgTable("messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  queryId: uuid("query_id")
+    .notNull()
+    .references(() => queries.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  senderId: text("sender_id").references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+});
+
 // --- Relations ---
 
 import { relations } from "drizzle-orm";
@@ -320,6 +342,29 @@ export const ruleDeadlinesRelations = relations(ruleDeadlines, ({ one }) => ({
   ruleset: one(rulesets, {
     fields: [ruleDeadlines.rulesetId],
     references: [rulesets.id],
+  }),
+}));
+
+export const queriesRelations = relations(queries, ({ one, many }) => ({
+  application: one(applications, {
+    fields: [queries.applicationId],
+    references: [applications.id],
+  }),
+  creator: one(users, {
+    fields: [queries.createdBy],
+    references: [users.id],
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  query: one(queries, {
+    fields: [messages.queryId],
+    references: [queries.id],
+  }),
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
   }),
 }));
 

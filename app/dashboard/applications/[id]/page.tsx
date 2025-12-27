@@ -1,12 +1,14 @@
 import { db } from "@/lib/db";
-import { applications, varieties, jurisdictions, tasks } from "@/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { applications, varieties, jurisdictions, tasks, queries, messages } from "@/db/schema";
+import { eq, asc, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { QueriesUI } from "@/components/queries-ui";
 import {
   Table,
   TableBody,
@@ -40,6 +42,22 @@ export default async function ApplicationDetailsPage({
     where: eq(tasks.applicationId, app.id),
     orderBy: [asc(tasks.dueDate)],
   });
+
+  const appQueries = await db.query.queries.findMany({
+    where: eq(queries.applicationId, app.id),
+    with: {
+      creator: true,
+      messages: {
+        orderBy: [asc(messages.createdAt)],
+        with: {
+          sender: true
+        }
+      }
+    },
+    orderBy: [desc(queries.createdAt)]
+  });
+
+  const session = await auth();
 
   const deadlines = appTasks.filter((t) => t.type === "DEADLINE");
   const documents = appTasks.filter((t) => t.type === "DOCUMENT");
@@ -202,6 +220,28 @@ export default async function ApplicationDetailsPage({
                 ))}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Communication & Queries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QueriesUI 
+              applicationId={app.id} 
+              initialQueries={appQueries.map(q => ({
+                ...q,
+                createdAt: q.createdAt.toISOString(),
+                messages: q.messages.map(m => ({
+                  ...m,
+                  createdAt: m.createdAt.toISOString()
+                }))
+              }))} 
+              currentUserId={session?.user?.id || ""} 
+            />
           </CardContent>
         </Card>
       </div>

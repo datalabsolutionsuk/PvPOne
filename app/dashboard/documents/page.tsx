@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
-import { eq, desc, and, alias } from "drizzle-orm";
+import { eq, desc, and, aliasedTable } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -50,8 +50,8 @@ export default async function DocumentsPage({
       requiredConditions.push(eq(applications.organisationId, organisationId));
     }
 
-    const creator = alias(users, "creator");
-    const updater = alias(users, "updater");
+    const creator = aliasedTable(users, "creator");
+    const updater = aliasedTable(users, "updater");
 
     const [uploaded, required] = await Promise.all([
       db

@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import { applications, tasks, varieties, jurisdictions } from "@/db/schema";
-import { sql, eq, and, gte, asc } from "drizzle-orm";
+import { applications, tasks, varieties, jurisdictions, queries } from "@/db/schema";
+import { sql, eq, and, gte, asc, desc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import Link from "next/link";
-import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
@@ -28,6 +28,7 @@ export default async function DashboardPage({
 
   let stats: { status: string | null; count: number }[] = [];
   let upcomingDeadlines: any[] = [];
+  let recentQueries: any[] = [];
   let totalVarieties = 0;
   let pendingTasksCount = 0;
   let totalDeadlines = 0;
@@ -118,6 +119,23 @@ export default async function DashboardPage({
       .innerJoin(applications, eq(tasks.applicationId, applications.id))
       .where(and(...pendingTasksConditions));
     pendingTasksCount = Number(tasksCount[0].count);
+
+    // 5. Recent Queries
+    const queriesConditions = [];
+    if (organisationId) {
+      queriesConditions.push(eq(applications.organisationId, organisationId));
+    }
+
+    const recentQueries = await db
+      .select({
+        query: queries,
+        application: applications,
+      })
+      .from(queries)
+      .innerJoin(applications, eq(queries.applicationId, applications.id))
+      .where(and(...queriesConditions))
+      .orderBy(desc(queries.updatedAt))
+      .limit(5);
 
   } catch (e) {
     console.error("Failed to fetch dashboard stats", e);
@@ -212,7 +230,7 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 flex-1 min-h-0">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 flex-1 min-h-0">
         <Card className="border-none shadow-sm flex flex-col h-full overflow-hidden">
           <CardHeader className="flex-shrink-0">
             <CardTitle>Cases by Status</CardTitle>
@@ -308,6 +326,41 @@ export default async function DashboardPage({
                   </Button>
                 </Link>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm flex flex-col h-full overflow-hidden">
+          <CardHeader className="flex-shrink-0">
+            <CardTitle>Recent Queries</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {recentQueries.length === 0 ? (
+                <p className="text-sm text-gray-500">No recent queries.</p>
+              ) : (
+                recentQueries.map(({ query, application }) => (
+                  <Link 
+                    key={query.id} 
+                    href={`/dashboard/applications/${application.id}`}
+                    className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold truncate max-w-[150px]">{query.title}</h4>
+                        <p className="text-sm text-muted-foreground">{application.referenceNumber || application.variety?.name || "App"}</p>
+                      </div>
+                      <Badge variant={query.status === "Open" ? "default" : "secondary"}>
+                        {query.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-xs text-muted-foreground mt-2">
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      {format(query.updatedAt, "MMM d, h:mm a")}
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

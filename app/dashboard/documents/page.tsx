@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
-import { eq, desc, asc, and, aliasedTable, sql } from "drizzle-orm";
+import { eq, desc, asc, and, aliasedTable, sql, or } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -19,6 +19,8 @@ import { Upload } from "lucide-react";
 import { cookies } from "next/headers";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 import { SortableColumn } from "@/components/ui/sortable-column";
+import { SearchInput } from "@/components/ui/search-input";
+import { HighlightedText } from "@/components/ui/highlighted-text";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -33,6 +35,7 @@ export default async function DocumentsPage({
     order?: string;
     pendingSort?: string;
     pendingOrder?: string;
+    query?: string;
   };
 }) {
   const organisationId = await getCurrentOrganisationId();
@@ -53,6 +56,7 @@ export default async function DocumentsPage({
   const order = searchParams.order === "asc" ? asc : desc;
   const pendingSort = searchParams.pendingSort;
   const pendingOrder = searchParams.pendingOrder === "asc" ? asc : desc;
+  const queryText = searchParams.query;
 
   let uploadedDocs: any[] = [];
   let requiredDocs: any[] = [];
@@ -71,15 +75,38 @@ export default async function DocumentsPage({
       requiredConditions.push(eq(applications.organisationId, organisationId));
     }
 
+    if (queryText) {
+      uploadedConditions.push(
+        or(
+          sql`${documents.name} ILIKE ${`%${queryText}%`}`,
+          sql`${documents.type} ILIKE ${`%${queryText}%`}`,
+          sql`${applications.applicationNumber} ILIKE ${`%${queryText}%`}`
+        )
+      );
+
+      requiredConditions.push(
+        or(
+          sql`${tasks.title} ILIKE ${`%${queryText}%`}`,
+          sql`${varieties.name} ILIKE ${`%${queryText}%`}`,
+          sql`${jurisdictions.code} ILIKE ${`%${queryText}%`}`
+        )
+      );
+    }
+
     const creator = aliasedTable(users, "creator");
     const updater = aliasedTable(users, "updater");
 
     // Count queries
     const [uploadedCount, requiredCount] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(documents).where(and(...uploadedConditions)),
+      db.select({ count: sql<number>`count(*)` })
+        .from(documents)
+        .leftJoin(applications, eq(documents.applicationId, applications.id))
+        .where(and(...uploadedConditions)),
       db.select({ count: sql<number>`count(*)` })
         .from(tasks)
         .innerJoin(applications, eq(tasks.applicationId, applications.id))
+        .innerJoin(varieties, eq(applications.varietyId, varieties.id))
+        .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
         .where(and(...requiredConditions))
     ]);
 
@@ -159,9 +186,12 @@ export default async function DocumentsPage({
     <div className="space-y-6 h-full flex flex-col overflow-y-auto pr-2">
       <div className="flex items-center justify-between flex-shrink-0">
         <h2 className="text-3xl font-bold tracking-tight">Documents</h2>
-        <Button asChild>
-          <Link href="/dashboard/documents/upload">Upload Document</Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <SearchInput placeholder="Search documents..." />
+          <Button asChild>
+            <Link href="/dashboard/documents/upload">Upload Document</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Required Documents Section */}
@@ -189,10 +219,12 @@ export default async function DocumentsPage({
                 ) : (
                   requiredDocs.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium py-1">{item.title}</TableCell>
+                      <TableCell className="font-medium py-1">
+                        <HighlightedText text={item.title} query={queryText} />
+                      </TableCell>
                       <TableCell className="py-1">
                         <Link href={`/dashboard/applications/${item.applicationId}`} className="hover:underline text-blue-600">
-                          {item.varietyName} ({item.jurisdictionCode})
+                          <HighlightedText text={item.varietyName} query={queryText} /> ({item.jurisdictionCode})
                         </Link>
                       </TableCell>
                       <TableCell className="py-1">
@@ -230,7 +262,7 @@ export default async function DocumentsPage({
                 asChild={pendingPage > 1}
               >
                 {pendingPage > 1 ? (
-                  <Link href={`/dashboard/documents?pendingPage=${pendingPage - 1}&page=${page}&limit=${pageSize}`}>
+                  <Link href={`/dashboard/documents?pendingPage=${pendingPage - 1}&page=${page}&limit=${pageSize}${queryText ? `&query=${queryText}` : ''}`}>
                     <ChevronLeft className="h-4 w-4" />
                   </Link>
                 ) : (
@@ -244,7 +276,7 @@ export default async function DocumentsPage({
                 asChild={pendingPage < totalPendingPages}
               >
                 {pendingPage < totalPendingPages ? (
-                  <Link href={`/dashboard/documents?pendingPage=${pendingPage + 1}&page=${page}&limit=${pageSize}`}>
+                  <Link href={`/dashboard/documents?pendingPage=${pendingPage + 1}&page=${page}&limit=${pageSize}${queryText ? `&query=${queryText}` : ''}`}>
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 ) : (
@@ -283,13 +315,19 @@ export default async function DocumentsPage({
                 ) : (
                   uploadedDocs.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium py-2">{item.name}</TableCell>
-                      <TableCell className="py-2">{item.type}</TableCell>
+                      <TableCell className="font-medium py-2">
+                        <HighlightedText text={item.name} query={queryText} />
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <HighlightedText text={item.type} query={queryText} />
+                      </TableCell>
                       <TableCell className="py-2">{item.owner || "-"}</TableCell>
                       <TableCell className="py-2">
                         {item.appNumber ? (
                           <div className="flex flex-col">
-                            <span>{item.appNumber}</span>
+                            <span>
+                              <HighlightedText text={item.appNumber} query={queryText} />
+                            </span>
                             <span className="text-xs text-gray-500">{item.varietyName}</span>
                           </div>
                         ) : (
@@ -335,7 +373,7 @@ export default async function DocumentsPage({
                 asChild={page > 1}
               >
                 {page > 1 ? (
-                  <Link href={`/dashboard/documents?page=${page - 1}&pendingPage=${pendingPage}&limit=${pageSize}`}>
+                  <Link href={`/dashboard/documents?page=${page - 1}&pendingPage=${pendingPage}&limit=${pageSize}${queryText ? `&query=${queryText}` : ''}`}>
                     <ChevronLeft className="h-4 w-4" />
                   </Link>
                 ) : (
@@ -349,7 +387,7 @@ export default async function DocumentsPage({
                 asChild={page < totalPages}
               >
                 {page < totalPages ? (
-                  <Link href={`/dashboard/documents?page=${page + 1}&pendingPage=${pendingPage}&limit=${pageSize}`}>
+                  <Link href={`/dashboard/documents?page=${page + 1}&pendingPage=${pendingPage}&limit=${pageSize}${queryText ? `&query=${queryText}` : ''}`}>
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 ) : (

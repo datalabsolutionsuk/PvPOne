@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
-import { eq, desc, and, aliasedTable } from "drizzle-orm";
+import { eq, desc, and, aliasedTable, sql } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -19,10 +19,12 @@ import { Upload } from "lucide-react";
 import { cookies } from "next/headers";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; limit?: string };
+  searchParams: { page?: string; limit?: string; pendingPage?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
@@ -33,11 +35,15 @@ export default async function DocumentsPage({
   }
 
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
+  const pendingPage = searchParams.pendingPage ? parseInt(searchParams.pendingPage) : 1;
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
+  const pendingOffset = (pendingPage - 1) * pageSize;
 
   let uploadedDocs: any[] = [];
   let requiredDocs: any[] = [];
+  let totalPending = 0;
+  let totalUploaded = 0;
 
   try {
     const uploadedConditions = [];
@@ -53,6 +59,18 @@ export default async function DocumentsPage({
 
     const creator = aliasedTable(users, "creator");
     const updater = aliasedTable(users, "updater");
+
+    // Count queries
+    const [uploadedCount, requiredCount] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(documents).where(and(...uploadedConditions)),
+      db.select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .innerJoin(applications, eq(tasks.applicationId, applications.id))
+        .where(and(...requiredConditions))
+    ]);
+
+    totalUploaded = Number(uploadedCount[0].count);
+    totalPending = Number(requiredCount[0].count);
 
     const [uploaded, required] = await Promise.all([
       db
@@ -74,7 +92,9 @@ export default async function DocumentsPage({
         .leftJoin(creator, eq(documents.uploadedBy, creator.id))
         .leftJoin(updater, eq(documents.updatedBy, updater.id))
         .where(and(...uploadedConditions))
-        .orderBy(desc(documents.createdAt)),
+        .orderBy(desc(documents.createdAt))
+        .limit(pageSize)
+        .offset(offset),
       
       db
         .select({
@@ -93,6 +113,8 @@ export default async function DocumentsPage({
         .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
         .where(and(...requiredConditions))
         .orderBy(tasks.dueDate)
+        .limit(pageSize)
+        .offset(pendingOffset)
     ]);
 
     uploadedDocs = uploaded;
@@ -101,9 +123,8 @@ export default async function DocumentsPage({
     console.error("Failed to fetch documents", e);
   }
 
-  const totalItems = uploadedDocs.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const paginatedUploadedDocs = uploadedDocs.slice(offset, offset + pageSize);
+  const totalPages = Math.ceil(totalUploaded / pageSize);
+  const totalPendingPages = Math.ceil(totalPending / pageSize);
 
   return (
     <div className="space-y-6 h-full flex flex-col overflow-y-auto pr-2">
@@ -115,12 +136,12 @@ export default async function DocumentsPage({
       </div>
 
       {/* Required Documents Section */}
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1 flex flex-col min-h-0">
         <h3 className="text-xl font-semibold">Required Documents (Pending)</h3>
-        <Card>
-          <CardContent className="p-0">
+        <Card className="flex-1 flex flex-col min-h-0">
+          <CardContent className="p-0 flex-1 overflow-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-white z-10">
                 <TableRow>
                   <TableHead>Document</TableHead>
                   <TableHead>Application</TableHead>
@@ -139,24 +160,24 @@ export default async function DocumentsPage({
                 ) : (
                   requiredDocs.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium py-2">{item.title}</TableCell>
+                      <TableCell className="py-2">
                         <Link href={`/dashboard/applications/${item.applicationId}`} className="hover:underline text-blue-600">
                           {item.varietyName} ({item.jurisdictionCode})
                         </Link>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         {item.dueDate ? format(item.dueDate, "PP") : "N/A"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                           {item.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild size="sm" variant="outline">
+                      <TableCell className="text-right py-2">
+                        <Button asChild size="sm" variant="outline" className="h-8">
                           <Link href={`/dashboard/documents/upload?taskId=${item.id}&type=${item.title}`}>
-                            <Upload className="mr-2 h-4 w-4" /> Upload
+                            <Upload className="mr-2 h-3 w-3" /> Upload
                           </Link>
                         </Button>
                       </TableCell>
@@ -166,6 +187,43 @@ export default async function DocumentsPage({
               </TableBody>
             </Table>
           </CardContent>
+          
+          <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
+            <div className="text-sm text-muted-foreground">
+              Page {pendingPage} of {totalPendingPages || 1} ({totalPending} total)
+            </div>
+            <PaginationLimitSelect pageParam={["page", "pendingPage"]} />
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={pendingPage <= 1}
+                asChild={pendingPage > 1}
+              >
+                {pendingPage > 1 ? (
+                  <Link href={`/dashboard/documents?pendingPage=${pendingPage - 1}&page=${page}&limit=${pageSize}`}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Button variant="outline" size="sm" disabled><ChevronLeft className="h-4 w-4" /></Button>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={pendingPage >= totalPendingPages}
+                asChild={pendingPage < totalPendingPages}
+              >
+                {pendingPage < totalPendingPages ? (
+                  <Link href={`/dashboard/documents?pendingPage=${pendingPage + 1}&page=${page}&limit=${pageSize}`}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Button variant="outline" size="sm" disabled><ChevronRight className="h-4 w-4" /></Button>
+                )}
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -187,19 +245,19 @@ export default async function DocumentsPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUploadedDocs.length === 0 ? (
+                {uploadedDocs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={superAdmin ? 7 : 6} className="text-center py-4 text-muted-foreground">
                       No documents uploaded yet.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedUploadedDocs.map((item) => (
+                  uploadedDocs.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.type}</TableCell>
-                      <TableCell>{item.owner || "-"}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium py-2">{item.name}</TableCell>
+                      <TableCell className="py-2">{item.type}</TableCell>
+                      <TableCell className="py-2">{item.owner || "-"}</TableCell>
+                      <TableCell className="py-2">
                         {item.appNumber ? (
                           <div className="flex flex-col">
                             <span>{item.appNumber}</span>
@@ -209,21 +267,21 @@ export default async function DocumentsPage({
                           "-"
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         {format(item.createdAt, "yyyy-MM-dd")}
                       </TableCell>
                       {superAdmin && (
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground py-2">
                           <div>C: {item.createdAt ? format(item.createdAt, "yyyy-MM-dd") : "-"} {item.createdBy ? `(${item.createdBy})` : ""}</div>
                           <div>U: {item.updatedAt ? format(item.updatedAt, "yyyy-MM-dd") : "-"} {item.updatedBy ? `(${item.updatedBy})` : ""}</div>
                         </TableCell>
                       )}
-                      <TableCell className="text-right">
+                      <TableCell className="text-right py-2">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" asChild>
+                          <Button variant="ghost" size="sm" asChild className="h-8">
                             <Link href={`/dashboard/documents/${item.id}/edit`}>Edit</Link>
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="h-8">
                             Download
                           </Button>
                         </div>
@@ -237,9 +295,9 @@ export default async function DocumentsPage({
 
           <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
             <div className="text-sm text-muted-foreground">
-              Page {page} of {totalPages || 1} ({totalItems} total)
+              Page {page} of {totalPages || 1} ({totalUploaded} total)
             </div>
-            <PaginationLimitSelect />
+            <PaginationLimitSelect pageParam={["page", "pendingPage"]} />
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -248,8 +306,12 @@ export default async function DocumentsPage({
                 asChild={page > 1}
               >
                 {page > 1 ? (
-                  <Link href={`/dashboard/documents?page=${page - 1}&limit=${pageSize}`}>Previous</Link>
-                ) : "Previous"}
+                  <Link href={`/dashboard/documents?page=${page - 1}&pendingPage=${pendingPage}&limit=${pageSize}`}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Button variant="outline" size="sm" disabled><ChevronLeft className="h-4 w-4" /></Button>
+                )}
               </Button>
               <Button 
                 variant="outline" 
@@ -258,8 +320,12 @@ export default async function DocumentsPage({
                 asChild={page < totalPages}
               >
                 {page < totalPages ? (
-                  <Link href={`/dashboard/documents?page=${page + 1}&limit=${pageSize}`}>Next</Link>
-                ) : "Next"}
+                  <Link href={`/dashboard/documents?page=${page + 1}&pendingPage=${pendingPage}&limit=${pageSize}`}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Button variant="outline" size="sm" disabled><ChevronRight className="h-4 w-4" /></Button>
+                )}
               </Button>
             </div>
           </div>

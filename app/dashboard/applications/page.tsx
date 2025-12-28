@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -43,6 +43,8 @@ export default async function ApplicationsPage({
     updatedAt: Date | null;
   }[] = [];
   
+  let totalApps = 0;
+  
   try {
     const conditions = [];
     if (organisationId) {
@@ -53,6 +55,17 @@ export default async function ApplicationsPage({
       conditions.push(eq(applications.status, searchParams.status));
     }
 
+    // Count query
+    const countRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .leftJoin(varieties, eq(applications.varietyId, varieties.id))
+      .leftJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
+      .where(and(...conditions));
+      
+    totalApps = Number(countRes[0].count);
+
+    // Data query
     let query = db
       .select({
         id: applications.id,
@@ -73,15 +86,16 @@ export default async function ApplicationsPage({
     }
     
     query.orderBy(desc(applications.createdAt));
+    query.limit(pageSize);
+    query.offset(offset);
 
     apps = await query;
   } catch (e) {
     console.error("Failed to fetch applications", e);
   }
 
-  const totalApps = apps.length;
   const totalPages = Math.ceil(totalApps / pageSize);
-  const paginatedApps = apps.slice(offset, offset + pageSize);
+  const paginatedApps = apps;
 
   return (
     <div className="space-y-6 h-full flex flex-col">

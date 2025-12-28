@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { varieties } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -15,11 +15,12 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
+import { SortableColumn } from "@/components/ui/sortable-column";
 
 export default async function VarietiesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; limit?: string };
+  searchParams: { page?: string; limit?: string; sort?: string; order?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const isSuper = await isSuperAdmin();
@@ -31,6 +32,8 @@ export default async function VarietiesPage({
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
+  const sort = searchParams.sort;
+  const order = searchParams.order === "asc" ? asc : desc;
 
   let data: any[] = [];
   try {
@@ -42,7 +45,14 @@ export default async function VarietiesPage({
       query.where(eq(varieties.organisationId, organisationId));
     }
     
-    data = await query.orderBy(desc(varieties.createdAt));
+    let orderBy = desc(varieties.createdAt);
+    if (sort === "name") orderBy = order(varieties.name);
+    else if (sort === "species") orderBy = order(varieties.species);
+    else if (sort === "type") orderBy = order(varieties.varietyType);
+    else if (sort === "breederRef") orderBy = order(varieties.breederReference);
+    else if (sort === "createdAt") orderBy = order(varieties.createdAt);
+
+    data = await query.orderBy(orderBy);
   } catch (e) {
     console.error("Failed to fetch varieties", e);
   }
@@ -65,11 +75,11 @@ export default async function VarietiesPage({
           <Table>
             <TableHeader className="sticky top-0 bg-white z-10">
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Species</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Breeder Ref</TableHead>
-                <TableHead>Created At</TableHead>
+                <TableHead><SortableColumn title="Name" column="name" /></TableHead>
+                <TableHead><SortableColumn title="Species" column="species" /></TableHead>
+                <TableHead><SortableColumn title="Type" column="type" /></TableHead>
+                <TableHead><SortableColumn title="Breeder Ref" column="breederRef" /></TableHead>
+                <TableHead><SortableColumn title="Created At" column="createdAt" /></TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>

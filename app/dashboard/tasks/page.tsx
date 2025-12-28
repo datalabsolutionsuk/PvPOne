@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { tasks, applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, gte, asc, ne } from "drizzle-orm";
+import { eq, and, gte, asc, desc, ne } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -17,11 +17,12 @@ import Link from "next/link";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { cookies } from "next/headers";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
+import { SortableColumn } from "@/components/ui/sortable-column";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: { filter?: string; page?: string; limit?: string };
+  searchParams: { filter?: string; page?: string; limit?: string; sort?: string; order?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
@@ -34,6 +35,8 @@ export default async function TasksPage({
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
+  const sort = searchParams.sort;
+  const order = searchParams.order === "asc" ? asc : desc;
 
   let taskList: any[] = [];
   try {
@@ -55,6 +58,13 @@ export default async function TasksPage({
       conditions.push(eq(tasks.status, "PENDING"));
     }
 
+    let orderBy = asc(tasks.dueDate);
+    if (sort === "title") orderBy = order(tasks.title);
+    else if (sort === "dueDate") orderBy = order(tasks.dueDate);
+    else if (sort === "status") orderBy = order(tasks.status);
+    else if (sort === "variety") orderBy = order(varieties.name);
+    else if (sort === "jurisdiction") orderBy = order(jurisdictions.code);
+
     const taskListRaw = await db
       .select({
         task: tasks,
@@ -67,7 +77,7 @@ export default async function TasksPage({
       .innerJoin(varieties, eq(applications.varietyId, varieties.id))
       .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
       .where(and(...conditions))
-      .orderBy(asc(tasks.dueDate));
+      .orderBy(orderBy);
 
     taskList = taskListRaw.map(row => ({
       ...row.task,
@@ -108,11 +118,11 @@ export default async function TasksPage({
           <Table>
             <TableHeader className="sticky top-0 bg-white z-10">
               <TableRow>
-                <TableHead>Task</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Application</TableHead>
-                <TableHead>Jurisdiction</TableHead>
+                <TableHead><SortableColumn title="Task" column="title" /></TableHead>
+                <TableHead><SortableColumn title="Due Date" column="dueDate" /></TableHead>
+                <TableHead><SortableColumn title="Status" column="status" /></TableHead>
+                <TableHead><SortableColumn title="Application" column="variety" /></TableHead>
+                <TableHead><SortableColumn title="Jurisdiction" column="jurisdiction" /></TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>

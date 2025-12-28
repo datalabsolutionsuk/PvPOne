@@ -22,6 +22,8 @@ import {
 import { createOrgUser, updateOrgUser, deleteOrgUser } from "@/lib/org-actions";
 import { Pencil, Trash2, Plus, X } from "lucide-react";
 
+import { HighlightedText } from "@/components/ui/highlighted-text";
+
 type User = {
   id: string;
   name: string | null;
@@ -32,9 +34,11 @@ type User = {
 export default function OrgUserManagement({
   users,
   currentUserRole,
+  query,
 }: {
   users: User[];
   currentUserRole: string;
+  query?: string;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -94,9 +98,15 @@ export default function OrgUserManagement({
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.name || "N/A"}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
+                <TableCell>
+                  <HighlightedText text={user.name || "N/A"} highlight={query} />
+                </TableCell>
+                <TableCell>
+                  <HighlightedText text={user.email} highlight={query} />
+                </TableCell>
+                <TableCell>
+                  <HighlightedText text={user.role} highlight={query} />
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button

@@ -2,15 +2,21 @@ import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, sql, SQL } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OrgUserManagement from "./org-user-management";
 import { getCurrentOrganisationId } from "@/lib/context";
+import { SearchInput } from "@/components/ui/search-input";
 
-export default async function OrgUsersPage() {
+export default async function OrgUsersPage({
+  searchParams,
+}: {
+  searchParams: { query?: string };
+}) {
   const session = await auth();
   const organisationId = await getCurrentOrganisationId();
   const isSuper = session?.user?.role === "SuperAdmin";
+  const queryText = searchParams.query;
 
   if (!session?.user || (!organisationId && !isSuper)) {
     redirect("/login");
@@ -30,8 +36,24 @@ export default async function OrgUsersPage() {
     })
     .from(users);
 
+  const conditions = [];
+
   if (organisationId) {
-    query.where(eq(users.organisationId, organisationId));
+    conditions.push(eq(users.organisationId, organisationId));
+  }
+
+  if (queryText) {
+    conditions.push(
+      or(
+        sql`${users.name} ILIKE ${`%${queryText}%`}`,
+        sql`${users.email} ILIKE ${`%${queryText}%`}`,
+        sql`${users.role} ILIKE ${`%${queryText}%`}`
+      ) as SQL<unknown>
+    );
+  }
+
+  if (conditions.length > 0) {
+    query.where(and(...conditions));
   }
 
   const orgUsers = await query;
@@ -40,6 +62,9 @@ export default async function OrgUsersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Team Management</h1>
+        <div className="w-[300px]">
+          <SearchInput placeholder="Search users..." />
+        </div>
       </div>
 
       <Card>
@@ -47,7 +72,7 @@ export default async function OrgUsersPage() {
           <CardTitle>Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <OrgUserManagement users={orgUsers} currentUserRole={session.user.role} />
+          <OrgUserManagement users={orgUsers} currentUserRole={session.user.role} query={queryText} />
         </CardContent>
       </Card>
     </div>

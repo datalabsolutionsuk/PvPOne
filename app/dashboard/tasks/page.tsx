@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { tasks, applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, gte, asc, desc, ne } from "drizzle-orm";
+import { eq, and, gte, asc, desc, ne, or, sql, SQL } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -18,15 +18,18 @@ import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { cookies } from "next/headers";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 import { SortableColumn } from "@/components/ui/sortable-column";
+import { SearchInput } from "@/components/ui/search-input";
+import { HighlightedText } from "@/components/ui/highlighted-text";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: { filter?: string; page?: string; limit?: string; sort?: string; order?: string };
+  searchParams: { filter?: string; page?: string; limit?: string; sort?: string; order?: string; query?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
   const isImpersonating = cookies().has("admin_org_context");
+  const queryText = searchParams.query;
 
   if (!organisationId && !superAdmin) {
     return <div>Unauthorized</div>;
@@ -56,6 +59,18 @@ export default async function TasksPage({
       conditions.push(eq(tasks.status, "PENDING"));
     } else if (searchParams.filter === "pending") {
       conditions.push(eq(tasks.status, "PENDING"));
+    }
+
+    if (queryText) {
+      conditions.push(
+        or(
+          sql`${tasks.title} ILIKE ${`%${queryText}%`}`,
+          sql`${tasks.description} ILIKE ${`%${queryText}%`}`,
+          sql`${varieties.name} ILIKE ${`%${queryText}%`}`,
+          sql`${jurisdictions.code} ILIKE ${`%${queryText}%`}`,
+          sql`${applications.applicationNumber} ILIKE ${`%${queryText}%`}`
+        ) as SQL<unknown>
+      );
     }
 
     let orderBy = asc(tasks.dueDate);
@@ -108,9 +123,14 @@ export default async function TasksPage({
         <h2 className="text-3xl font-bold tracking-tight">
           {searchParams.filter === "urgent" ? "Urgent Tasks" : "All Tasks"}
         </h2>
-        <Button asChild>
-          <Link href="/dashboard/tasks/new">Add Task</Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="w-[300px]">
+            <SearchInput placeholder="Search tasks..." />
+          </div>
+          <Button asChild>
+            <Link href="/dashboard/tasks/new">Add Task</Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
@@ -129,7 +149,9 @@ export default async function TasksPage({
             <TableBody>
               {paginatedTasks.map((task) => (
                 <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.description || task.title}</TableCell>
+                  <TableCell className="font-medium">
+                    <HighlightedText text={task.description || task.title} highlight={queryText} />
+                  </TableCell>
                   <TableCell>
                     {task.dueDate ? format(task.dueDate, "yyyy-MM-dd") : "N/A"}
                   </TableCell>
@@ -140,11 +162,17 @@ export default async function TasksPage({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium">{task.application.applicationNumber || "Pending"}</span>
-                      <span className="text-xs text-muted-foreground">{task.application.variety.name}</span>
+                      <span className="font-medium">
+                        <HighlightedText text={task.application.applicationNumber || "Pending"} highlight={queryText} />
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <HighlightedText text={task.application.variety.name} highlight={queryText} />
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell>{task.application.jurisdiction.code}</TableCell>
+                  <TableCell>
+                    <HighlightedText text={task.application.jurisdiction.code} highlight={queryText} />
+                  </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/dashboard/applications/${task.applicationId}`}>View</Link>
@@ -176,7 +204,7 @@ export default async function TasksPage({
               asChild={page > 1}
             >
               {page > 1 ? (
-                <Link href={`/dashboard/tasks?page=${page - 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Previous</Link>
+                <Link href={`/dashboard/tasks?page=${page - 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}${queryText ? `&query=${queryText}` : ''}`}>Previous</Link>
               ) : "Previous"}
             </Button>
             <Button 
@@ -186,7 +214,7 @@ export default async function TasksPage({
               asChild={page < totalPages}
             >
               {page < totalPages ? (
-                <Link href={`/dashboard/tasks?page=${page + 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}`}>Next</Link>
+                <Link href={`/dashboard/tasks?page=${page + 1}&limit=${pageSize}${searchParams.filter ? `&filter=${searchParams.filter}` : ''}${queryText ? `&query=${queryText}` : ''}`}>Next</Link>
               ) : "Next"}
             </Button>
           </div>

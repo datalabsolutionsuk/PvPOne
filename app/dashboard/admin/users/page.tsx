@@ -25,7 +25,7 @@ export default async function AdminUsersPage({
       or(
         sql`${users.name} ILIKE ${`%${queryText}%`}`,
         sql`${users.email} ILIKE ${`%${queryText}%`}`,
-        sql`${users.role} ILIKE ${`%${queryText}%`}`,
+        sql`${users.role}::text ILIKE ${`%${queryText}%`}`,
         sql`${organisations.name} ILIKE ${`%${queryText}%`}`
       ) as SQL<unknown>
     );

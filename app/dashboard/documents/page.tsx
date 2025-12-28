@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
-import { eq, desc, asc, and, aliasedTable, sql, or } from "drizzle-orm";
+import { eq, desc, asc, and, aliasedTable, sql, or, SQL } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -81,7 +81,7 @@ export default async function DocumentsPage({
           sql`${documents.name} ILIKE ${`%${queryText}%`}`,
           sql`${documents.type} ILIKE ${`%${queryText}%`}`,
           sql`${applications.applicationNumber} ILIKE ${`%${queryText}%`}`
-        )
+        ) as SQL<unknown>
       );
 
       requiredConditions.push(
@@ -89,7 +89,7 @@ export default async function DocumentsPage({
           sql`${tasks.title} ILIKE ${`%${queryText}%`}`,
           sql`${varieties.name} ILIKE ${`%${queryText}%`}`,
           sql`${jurisdictions.code} ILIKE ${`%${queryText}%`}`
-        )
+        ) as SQL<unknown>
       );
     }
 

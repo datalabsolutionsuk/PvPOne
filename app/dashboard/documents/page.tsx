@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { documents, applications, varieties, tasks, jurisdictions, users } from "@/db/schema";
-import { eq, desc, and, aliasedTable, sql } from "drizzle-orm";
+import { eq, desc, asc, and, aliasedTable, sql } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -18,13 +18,22 @@ import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
 import { cookies } from "next/headers";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
+import { SortableColumn } from "@/components/ui/sortable-column";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; limit?: string; pendingPage?: string };
+  searchParams: { 
+    page?: string; 
+    limit?: string; 
+    pendingPage?: string;
+    sort?: string;
+    order?: string;
+    pendingSort?: string;
+    pendingOrder?: string;
+  };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const superAdmin = await isSuperAdmin();
@@ -39,6 +48,11 @@ export default async function DocumentsPage({
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
   const pendingOffset = (pendingPage - 1) * pageSize;
+
+  const sort = searchParams.sort;
+  const order = searchParams.order === "asc" ? asc : desc;
+  const pendingSort = searchParams.pendingSort;
+  const pendingOrder = searchParams.pendingOrder === "asc" ? asc : desc;
 
   let uploadedDocs: any[] = [];
   let requiredDocs: any[] = [];
@@ -72,6 +86,21 @@ export default async function DocumentsPage({
     totalUploaded = Number(uploadedCount[0].count);
     totalPending = Number(requiredCount[0].count);
 
+    // Uploaded Query Order
+    let uploadedOrderBy = desc(documents.createdAt);
+    if (sort === "name") uploadedOrderBy = order(documents.name);
+    else if (sort === "type") uploadedOrderBy = order(documents.type);
+    else if (sort === "owner") uploadedOrderBy = order(documents.owner);
+    else if (sort === "appNumber") uploadedOrderBy = order(applications.applicationNumber);
+    else if (sort === "createdAt") uploadedOrderBy = order(documents.createdAt);
+
+    // Required Query Order
+    let requiredOrderBy = asc(tasks.dueDate);
+    if (pendingSort === "title") requiredOrderBy = pendingOrder(tasks.title);
+    else if (pendingSort === "application") requiredOrderBy = pendingOrder(varieties.name);
+    else if (pendingSort === "dueDate") requiredOrderBy = pendingOrder(tasks.dueDate);
+    else if (pendingSort === "status") requiredOrderBy = pendingOrder(tasks.status);
+
     const [uploaded, required] = await Promise.all([
       db
         .select({
@@ -92,7 +121,7 @@ export default async function DocumentsPage({
         .leftJoin(creator, eq(documents.uploadedBy, creator.id))
         .leftJoin(updater, eq(documents.updatedBy, updater.id))
         .where(and(...uploadedConditions))
-        .orderBy(desc(documents.createdAt))
+        .orderBy(uploadedOrderBy)
         .limit(pageSize)
         .offset(offset),
       
@@ -112,7 +141,7 @@ export default async function DocumentsPage({
         .innerJoin(varieties, eq(applications.varietyId, varieties.id))
         .innerJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
         .where(and(...requiredConditions))
-        .orderBy(tasks.dueDate)
+        .orderBy(requiredOrderBy)
         .limit(pageSize)
         .offset(pendingOffset)
     ]);
@@ -143,10 +172,10 @@ export default async function DocumentsPage({
             <Table>
               <TableHeader className="sticky top-0 bg-white z-10">
                 <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Application</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead><SortableColumn title="Document" column="title" prefix="pending" /></TableHead>
+                  <TableHead><SortableColumn title="Application" column="application" prefix="pending" /></TableHead>
+                  <TableHead><SortableColumn title="Due Date" column="dueDate" prefix="pending" /></TableHead>
+                  <TableHead><SortableColumn title="Status" column="status" prefix="pending" /></TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,11 +264,11 @@ export default async function DocumentsPage({
             <Table>
               <TableHeader className="sticky top-0 bg-white z-10">
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Related Application</TableHead>
-                  <TableHead>Uploaded At</TableHead>
+                  <TableHead><SortableColumn title="Name" column="name" /></TableHead>
+                  <TableHead><SortableColumn title="Type" column="type" /></TableHead>
+                  <TableHead><SortableColumn title="Owner" column="owner" /></TableHead>
+                  <TableHead><SortableColumn title="Related Application" column="appNumber" /></TableHead>
+                  <TableHead><SortableColumn title="Uploaded At" column="createdAt" /></TableHead>
                   {superAdmin && <TableHead>Created / Updated</TableHead>}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>

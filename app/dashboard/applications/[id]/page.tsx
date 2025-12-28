@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TaskActions, AddTaskButton } from "./actions";
+import { SortableColumn } from "@/components/ui/sortable-column";
 
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -27,13 +28,26 @@ export default async function ApplicationDetailsPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { deadlinesPage?: string; documentsPage?: string; limit?: string };
+  searchParams: { 
+    deadlinesPage?: string; 
+    documentsPage?: string; 
+    limit?: string;
+    deadlinesSort?: string;
+    deadlinesOrder?: string;
+    documentsSort?: string;
+    documentsOrder?: string;
+  };
 }) {
   const deadlinesPage = searchParams.deadlinesPage ? parseInt(searchParams.deadlinesPage) : 1;
   const documentsPage = searchParams.documentsPage ? parseInt(searchParams.documentsPage) : 1;
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const deadlinesOffset = (deadlinesPage - 1) * pageSize;
   const documentsOffset = (documentsPage - 1) * pageSize;
+
+  const deadlinesSort = searchParams.deadlinesSort;
+  const deadlinesOrder = searchParams.deadlinesOrder === "asc" ? asc : desc;
+  const documentsSort = searchParams.documentsSort;
+  const documentsOrder = searchParams.documentsOrder === "asc" ? asc : desc;
 
   const app = await db.query.applications.findFirst({
     where: eq(applications.id, params.id),
@@ -53,11 +67,16 @@ export default async function ApplicationDetailsPage({
     eq(tasks.type, "DEADLINE")
   ];
 
+  let deadlinesOrderBy = asc(tasks.dueDate);
+  if (deadlinesSort === "title") deadlinesOrderBy = deadlinesOrder(tasks.title);
+  else if (deadlinesSort === "dueDate") deadlinesOrderBy = deadlinesOrder(tasks.dueDate);
+  else if (deadlinesSort === "status") deadlinesOrderBy = deadlinesOrder(tasks.status);
+
   const [deadlinesCountRes, deadlines] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(tasks).where(and(...deadlinesConditions)),
     db.select().from(tasks)
       .where(and(...deadlinesConditions))
-      .orderBy(asc(tasks.dueDate))
+      .orderBy(deadlinesOrderBy)
       .limit(pageSize)
       .offset(deadlinesOffset)
   ]);
@@ -70,11 +89,16 @@ export default async function ApplicationDetailsPage({
     eq(tasks.type, "DOCUMENT")
   ];
 
+  let documentsOrderBy = asc(tasks.dueDate);
+  if (documentsSort === "title") documentsOrderBy = documentsOrder(tasks.title);
+  else if (documentsSort === "dueDate") documentsOrderBy = documentsOrder(tasks.dueDate);
+  else if (documentsSort === "status") documentsOrderBy = documentsOrder(tasks.status);
+
   const [documentsCountRes, documents] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(tasks).where(and(...documentsConditions)),
     db.select().from(tasks)
       .where(and(...documentsConditions))
-      .orderBy(asc(tasks.dueDate))
+      .orderBy(documentsOrderBy)
       .limit(pageSize)
       .offset(documentsOffset)
   ]);
@@ -167,9 +191,9 @@ export default async function ApplicationDetailsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead><SortableColumn title="Task" column="title" prefix="deadlines" /></TableHead>
+                  <TableHead><SortableColumn title="Due Date" column="dueDate" prefix="deadlines" /></TableHead>
+                  <TableHead><SortableColumn title="Status" column="status" prefix="deadlines" /></TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -254,9 +278,9 @@ export default async function ApplicationDetailsPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead><SortableColumn title="Document" column="title" prefix="documents" /></TableHead>
+                  <TableHead><SortableColumn title="Due Date" column="dueDate" prefix="documents" /></TableHead>
+                  <TableHead><SortableColumn title="Status" column="status" prefix="documents" /></TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>

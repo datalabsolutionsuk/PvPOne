@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -15,11 +15,13 @@ import { format } from "date-fns";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Card, CardContent } from "@/components/ui/card";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
+import { SortableColumn } from "@/components/ui/sortable-column";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; page?: string; limit?: string };
+  searchParams: { status?: string; page?: string; limit?: string; sort?: string; order?: string };
 }) {
   const organisationId = await getCurrentOrganisationId();
   const isSuper = await isSuperAdmin();
@@ -31,6 +33,8 @@ export default async function ApplicationsPage({
   const page = searchParams.page ? parseInt(searchParams.page) : 1;
   const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
   const offset = (page - 1) * pageSize;
+  const sort = searchParams.sort;
+  const order = searchParams.order === "asc" ? asc : desc;
 
   let apps: {
     id: string;
@@ -85,7 +89,15 @@ export default async function ApplicationsPage({
       query.where(and(...conditions));
     }
     
-    query.orderBy(desc(applications.createdAt));
+    let orderBy = desc(applications.createdAt);
+    if (sort === "variety") orderBy = order(varieties.name);
+    else if (sort === "jurisdiction") orderBy = order(jurisdictions.code);
+    else if (sort === "appNumber") orderBy = order(applications.applicationNumber);
+    else if (sort === "status") orderBy = order(applications.status);
+    else if (sort === "filingDate") orderBy = order(applications.filingDate);
+    else if (sort === "createdAt") orderBy = order(applications.createdAt);
+
+    query.orderBy(orderBy);
     query.limit(pageSize);
     query.offset(offset);
 
@@ -113,12 +125,12 @@ export default async function ApplicationsPage({
           <Table>
             <TableHeader className="sticky top-0 bg-white z-10">
               <TableRow>
-                <TableHead>App Number</TableHead>
-                <TableHead>Variety</TableHead>
-                <TableHead>Jurisdiction</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Filing Date</TableHead>
-                {isSuper && <TableHead>Created / Updated</TableHead>}
+                <TableHead><SortableColumn title="App Number" column="appNumber" /></TableHead>
+                <TableHead><SortableColumn title="Variety" column="variety" /></TableHead>
+                <TableHead><SortableColumn title="Jurisdiction" column="jurisdiction" /></TableHead>
+                <TableHead><SortableColumn title="Status" column="status" /></TableHead>
+                <TableHead><SortableColumn title="Filing Date" column="filingDate" /></TableHead>
+                {isSuper && <TableHead><SortableColumn title="Created" column="createdAt" /></TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>

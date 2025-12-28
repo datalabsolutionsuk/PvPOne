@@ -160,22 +160,22 @@ export default async function DocumentsPage({
                 ) : (
                   requiredDocs.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium py-2">{item.title}</TableCell>
-                      <TableCell className="py-2">
+                      <TableCell className="font-medium py-1">{item.title}</TableCell>
+                      <TableCell className="py-1">
                         <Link href={`/dashboard/applications/${item.applicationId}`} className="hover:underline text-blue-600">
                           {item.varietyName} ({item.jurisdictionCode})
                         </Link>
                       </TableCell>
-                      <TableCell className="py-2">
+                      <TableCell className="py-1">
                         {item.dueDate ? format(item.dueDate, "PP") : "N/A"}
                       </TableCell>
-                      <TableCell className="py-2">
+                      <TableCell className="py-1">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                           {item.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right py-2">
-                        <Button asChild size="sm" variant="outline" className="h-8">
+                      <TableCell className="text-right py-1">
+                        <Button asChild size="sm" variant="outline" className="h-7 text-xs">
                           <Link href={`/dashboard/documents/upload?taskId=${item.id}&type=${item.title}`}>
                             <Upload className="mr-2 h-3 w-3" /> Upload
                           </Link>

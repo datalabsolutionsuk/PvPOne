@@ -157,12 +157,13 @@ export default async function ApplicationDetailsPage({
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Deadlines & Tasks</CardTitle>
             <AddTaskButton applicationId={app.id} type="DEADLINE" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="flex-1">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -202,6 +203,7 @@ export default async function ApplicationDetailsPage({
                 ))}
               </TableBody>
             </Table>
+            </div>
             
             <div className="flex items-center justify-between pt-4 border-t mt-4">
               <div className="text-sm text-muted-foreground">
@@ -242,12 +244,13 @@ export default async function ApplicationDetailsPage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Required Documents</CardTitle>
             <AddTaskButton applicationId={app.id} type="DOCUMENT" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="flex-1">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -292,6 +295,7 @@ export default async function ApplicationDetailsPage({
                 ))}
               </TableBody>
             </Table>
+            </div>
 
             <div className="flex items-center justify-between pt-4 border-t mt-4">
               <div className="text-sm text-muted-foreground">

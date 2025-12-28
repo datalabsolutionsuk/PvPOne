@@ -2,17 +2,24 @@ import { db } from "@/lib/db";
 import { users, organisations } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, or, sql, SQL, and } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserManagement from "./user-management";
+import { SearchInput } from "@/components/ui/search-input";
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: { query?: string };
+}) {
   const session = await auth();
   if (session?.user?.role !== "SuperAdmin") {
     redirect("/dashboard");
   }
 
-  const allUsers = await db
+  const queryText = searchParams.query;
+
+  const query = db
     .select({
       id: users.id,
       name: users.name,
@@ -23,6 +30,19 @@ export default async function AdminUsersPage() {
     })
     .from(users)
     .leftJoin(organisations, eq(users.organisationId, organisations.id));
+
+  if (queryText) {
+    query.where(
+      or(
+        sql`${users.name} ILIKE ${`%${queryText}%`}`,
+        sql`${users.email} ILIKE ${`%${queryText}%`}`,
+        sql`${users.role} ILIKE ${`%${queryText}%`}`,
+        sql`${organisations.name} ILIKE ${`%${queryText}%`}`
+      ) as SQL<unknown>
+    );
+  }
+
+  const allUsers = await query;
 
   const allOrganisations = await db
     .select({
@@ -35,6 +55,9 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">User Management</h1>
+        <div className="w-[300px]">
+          <SearchInput placeholder="Search users..." />
+        </div>
       </div>
 
       <Card>
@@ -42,7 +65,7 @@ export default async function AdminUsersPage() {
           <CardTitle>All Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <UserManagement users={allUsers} organisations={allOrganisations} />
+          <UserManagement users={allUsers} organisations={allOrganisations} query={queryText} />
         </CardContent>
       </Card>
     </div>

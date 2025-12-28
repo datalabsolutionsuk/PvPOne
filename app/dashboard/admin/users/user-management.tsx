@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { createUser, updateUser, deleteUser } from "@/lib/admin-actions";
 import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { HighlightedText } from "@/components/ui/highlighted-text";
 
 type User = {
   id: string;
@@ -39,9 +40,11 @@ type Organisation = {
 export default function UserManagement({
   users,
   organisations,
+  query,
 }: {
   users: User[];
   organisations: Organisation[];
+  query?: string;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -102,10 +105,18 @@ export default function UserManagement({
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.organisationName || "N/A"}</TableCell>
+                <TableCell className="font-medium">
+                  <HighlightedText text={user.name} query={query} />
+                </TableCell>
+                <TableCell>
+                  <HighlightedText text={user.email} query={query} />
+                </TableCell>
+                <TableCell>
+                  <HighlightedText text={user.role} query={query} />
+                </TableCell>
+                <TableCell>
+                  <HighlightedText text={user.organisationName || "N/A"} query={query} />
+                </TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="ghost"

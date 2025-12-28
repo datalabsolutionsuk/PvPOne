@@ -150,7 +150,7 @@ export default async function TasksPage({
               {paginatedTasks.map((task) => (
                 <TableRow key={task.id}>
                   <TableCell className="font-medium">
-                    <HighlightedText text={task.description || task.title} highlight={queryText} />
+                    <HighlightedText text={task.description || task.title} query={queryText} />
                   </TableCell>
                   <TableCell>
                     {task.dueDate ? format(task.dueDate, "yyyy-MM-dd") : "N/A"}
@@ -163,15 +163,15 @@ export default async function TasksPage({
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        <HighlightedText text={task.application.applicationNumber || "Pending"} highlight={queryText} />
+                        <HighlightedText text={task.application.applicationNumber || "Pending"} query={queryText} />
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        <HighlightedText text={task.application.variety.name} highlight={queryText} />
+                        <HighlightedText text={task.application.variety.name} query={queryText} />
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <HighlightedText text={task.application.jurisdiction.code} highlight={queryText} />
+                    <HighlightedText text={task.application.jurisdiction.code} query={queryText} />
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>

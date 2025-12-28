@@ -99,13 +99,13 @@ export default function OrgUserManagement({
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <HighlightedText text={user.name || "N/A"} highlight={query} />
+                  <HighlightedText text={user.name || "N/A"} query={query} />
                 </TableCell>
                 <TableCell>
-                  <HighlightedText text={user.email} highlight={query} />
+                  <HighlightedText text={user.email} query={query} />
                 </TableCell>
                 <TableCell>
-                  <HighlightedText text={user.role} highlight={query} />
+                  <HighlightedText text={user.role} query={query} />
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

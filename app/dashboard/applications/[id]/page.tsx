@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { applications, varieties, jurisdictions, tasks, queries, messages } from "@/db/schema";
-import { eq, asc, desc } from "drizzle-orm";
+import { eq, asc, desc, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { QueriesUI } from "@/components/queries-ui";
+import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 import {
   Table,
   TableBody,
@@ -19,13 +20,21 @@ import {
 } from "@/components/ui/table";
 import { TaskActions, AddTaskButton } from "./actions";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function ApplicationDetailsPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { deadlinesPage?: string; documentsPage?: string; limit?: string };
 }) {
+  const deadlinesPage = searchParams.deadlinesPage ? parseInt(searchParams.deadlinesPage) : 1;
+  const documentsPage = searchParams.documentsPage ? parseInt(searchParams.documentsPage) : 1;
+  const pageSize = searchParams.limit ? parseInt(searchParams.limit) : 5;
+  const deadlinesOffset = (deadlinesPage - 1) * pageSize;
+  const documentsOffset = (documentsPage - 1) * pageSize;
+
   const app = await db.query.applications.findFirst({
     where: eq(applications.id, params.id),
     with: {
@@ -38,10 +47,39 @@ export default async function ApplicationDetailsPage({
     notFound();
   }
 
-  const appTasks = await db.query.tasks.findMany({
-    where: eq(tasks.applicationId, app.id),
-    orderBy: [asc(tasks.dueDate)],
-  });
+  // Fetch Deadlines
+  const deadlinesConditions = [
+    eq(tasks.applicationId, app.id),
+    eq(tasks.type, "DEADLINE")
+  ];
+
+  const [deadlinesCountRes, deadlines] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(tasks).where(and(...deadlinesConditions)),
+    db.select().from(tasks)
+      .where(and(...deadlinesConditions))
+      .orderBy(asc(tasks.dueDate))
+      .limit(pageSize)
+      .offset(deadlinesOffset)
+  ]);
+  const totalDeadlines = Number(deadlinesCountRes[0].count);
+  const totalDeadlinesPages = Math.ceil(totalDeadlines / pageSize);
+
+  // Fetch Documents
+  const documentsConditions = [
+    eq(tasks.applicationId, app.id),
+    eq(tasks.type, "DOCUMENT")
+  ];
+
+  const [documentsCountRes, documents] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(tasks).where(and(...documentsConditions)),
+    db.select().from(tasks)
+      .where(and(...documentsConditions))
+      .orderBy(asc(tasks.dueDate))
+      .limit(pageSize)
+      .offset(documentsOffset)
+  ]);
+  const totalDocuments = Number(documentsCountRes[0].count);
+  const totalDocumentsPages = Math.ceil(totalDocuments / pageSize);
 
   const appQueries = await db.query.queries.findMany({
     where: eq(queries.applicationId, app.id),
@@ -58,9 +96,6 @@ export default async function ApplicationDetailsPage({
   });
 
   const session = await auth();
-
-  const deadlines = appTasks.filter((t) => t.type === "DEADLINE");
-  const documents = appTasks.filter((t) => t.type === "DOCUMENT");
 
   return (
     <div className="h-full overflow-y-auto pr-2">
@@ -167,6 +202,43 @@ export default async function ApplicationDetailsPage({
                 ))}
               </TableBody>
             </Table>
+            
+            <div className="flex items-center justify-between pt-4 border-t mt-4">
+              <div className="text-sm text-muted-foreground">
+                Page {deadlinesPage} of {Math.max(1, totalDeadlinesPages)}
+              </div>
+              <PaginationLimitSelect pageParam={["deadlinesPage", "documentsPage"]} />
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={deadlinesPage <= 1}
+                  asChild={deadlinesPage > 1}
+                >
+                  {deadlinesPage > 1 ? (
+                    <Link href={`/dashboard/applications/${app.id}?deadlinesPage=${deadlinesPage - 1}&documentsPage=${documentsPage}&limit=${pageSize}`}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled><ChevronLeft className="h-4 w-4" /></Button>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={deadlinesPage >= totalDeadlinesPages}
+                  asChild={deadlinesPage < totalDeadlinesPages}
+                >
+                  {deadlinesPage < totalDeadlinesPages ? (
+                    <Link href={`/dashboard/applications/${app.id}?deadlinesPage=${deadlinesPage + 1}&documentsPage=${documentsPage}&limit=${pageSize}`}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled><ChevronRight className="h-4 w-4" /></Button>
+                  )}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -220,6 +292,43 @@ export default async function ApplicationDetailsPage({
                 ))}
               </TableBody>
             </Table>
+
+            <div className="flex items-center justify-between pt-4 border-t mt-4">
+              <div className="text-sm text-muted-foreground">
+                Page {documentsPage} of {Math.max(1, totalDocumentsPages)}
+              </div>
+              <PaginationLimitSelect pageParam={["deadlinesPage", "documentsPage"]} />
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={documentsPage <= 1}
+                  asChild={documentsPage > 1}
+                >
+                  {documentsPage > 1 ? (
+                    <Link href={`/dashboard/applications/${app.id}?documentsPage=${documentsPage - 1}&deadlinesPage=${deadlinesPage}&limit=${pageSize}`}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled><ChevronLeft className="h-4 w-4" /></Button>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={documentsPage >= totalDocumentsPages}
+                  asChild={documentsPage < totalDocumentsPages}
+                >
+                  {documentsPage < totalDocumentsPages ? (
+                    <Link href={`/dashboard/applications/${app.id}?documentsPage=${documentsPage + 1}&deadlinesPage=${deadlinesPage}&limit=${pageSize}`}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled><ChevronRight className="h-4 w-4" /></Button>
+                  )}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

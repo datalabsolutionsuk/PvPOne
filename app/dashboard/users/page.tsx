@@ -27,15 +27,6 @@ export default async function OrgUsersPage({
     redirect("/dashboard");
   }
 
-  const query = db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-    })
-    .from(users);
-
   const conditions = [];
 
   if (organisationId) {
@@ -52,11 +43,15 @@ export default async function OrgUsersPage({
     );
   }
 
-  if (conditions.length > 0) {
-    query.where(and(...conditions));
-  }
-
-  const orgUsers = await query;
+  const orgUsers = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+    })
+    .from(users)
+    .where(and(...conditions));
 
   return (
     <div className="space-y-6">

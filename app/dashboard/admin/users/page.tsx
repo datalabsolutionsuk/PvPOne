@@ -19,20 +19,9 @@ export default async function AdminUsersPage({
 
   const queryText = searchParams.query;
 
-  const query = db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      organisationId: users.organisationId,
-      organisationName: organisations.name,
-    })
-    .from(users)
-    .leftJoin(organisations, eq(users.organisationId, organisations.id));
-
+  const conditions = [];
   if (queryText) {
-    query.where(
+    conditions.push(
       or(
         sql`${users.name} ILIKE ${`%${queryText}%`}`,
         sql`${users.email} ILIKE ${`%${queryText}%`}`,
@@ -42,7 +31,18 @@ export default async function AdminUsersPage({
     );
   }
 
-  const allUsers = await query;
+  const allUsers = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      organisationId: users.organisationId,
+      organisationName: organisations.name,
+    })
+    .from(users)
+    .leftJoin(organisations, eq(users.organisationId, organisations.id))
+    .where(and(...conditions));
 
   const allOrganisations = await db
     .select({

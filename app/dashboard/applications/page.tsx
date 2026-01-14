@@ -47,6 +47,7 @@ export default async function ApplicationsPage({
     jurisdictionCode: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
+    hasDusFile: boolean;
   }[] = [];
   
   let totalApps = 0;

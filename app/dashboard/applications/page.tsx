@@ -16,7 +16,7 @@ import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Card, CardContent } from "@/components/ui/card";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 import { SortableColumn } from "@/components/ui/sortable-column";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Download } from "lucide-react";
 
 export default async function ApplicationsPage({
   searchParams,
@@ -47,7 +47,8 @@ export default async function ApplicationsPage({
     jurisdictionCode: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
-    hasDusFile: boolean;
+    dusFilePath: string | null;
+    dusFileName: string | null;
   }[] = [];
   
   let totalApps = 0;
@@ -85,10 +86,17 @@ export default async function ApplicationsPage({
         jurisdictionCode: jurisdictions.code,
         createdAt: applications.createdAt,
         updatedAt: applications.updatedAt,
-        hasDusFile: sql<boolean>`EXISTS(
-          SELECT 1 FROM ${documents} 
+        dusFilePath: sql<string>`(
+          SELECT storage_path FROM ${documents} 
           WHERE ${documents.applicationId} = ${applications.id} 
           AND ${documents.type} = 'DUS_REPORT'
+          ORDER BY created_at DESC LIMIT 1
+        )`,
+        dusFileName: sql<string>`(
+          SELECT name FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'DUS_REPORT'
+          ORDER BY created_at DESC LIMIT 1
         )`
       })
       .from(applications)
@@ -168,7 +176,16 @@ export default async function ApplicationsPage({
                       <TableCell>{app.dusStatus || "-"}</TableCell>
                       <TableCell>{app.dusExpectedReceiptDate ? format(app.dusExpectedReceiptDate, "yyyy-MM-dd") : "-"}</TableCell>
                       <TableCell className="text-center">
-                        {app.hasDusFile && <Check className="h-4 w-4 mx-auto text-green-600" />}
+                        {app.dusFilePath && (
+                          <div className="flex items-center justify-center gap-2">
+                            <Check className="h-4 w-4 text-green-600" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
+                              <a href={app.dusFilePath} download={app.dusFileName || "dus_report"}>
+                                <Download className="h-3 w-3" />
+                              </a>
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </>
                   ) : (

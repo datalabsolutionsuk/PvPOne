@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import path from "path";
-import { promises as fs } from "fs";
+import fs from "fs/promises";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
@@ -21,37 +21,49 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
     // Check for user ID which is required by foreign key
     if (!userId) {
         console.error("saveUploadedFile: Missing userId");
-        // We can either throw or proceed without uploadedBy if schema allowed it, but schema references users.id
-        // However, if references() is used without notNull(), it handles nulls. 
-        // Let's check schema again. `uploadedBy: text("uploaded_by").references(() => users.id)` is nullable.
-        // But let's proceed.
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    const filepath = path.join(uploadDir, filename);
+    // 1. File System Operations
+    let storagePath = "";
+    try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+        const uploadDir = path.join(process.cwd(), "public/uploads");
+        const filepath = path.join(uploadDir, filename);
 
-    await fs.mkdir(uploadDir, { recursive: true });
-    await fs.writeFile(filepath, buffer);
+        console.log(`Writing file to: ${filepath}`);
+        await fs.mkdir(uploadDir, { recursive: true });
+        await fs.writeFile(filepath, buffer);
+        storagePath = `/uploads/${filename}`;
+        console.log("File write successful.");
+    } catch (fsError) {
+        console.error("FileSystem Error in saveUploadedFile:", fsError);
+        throw new Error("Failed to save file to disk.");
+    }
 
-    const storagePath = `/uploads/${filename}`;
+    // 2. Database Operations
+    try {
+        console.log(`Inserting document metadata into DB. Org: ${orgId}, App: ${appId}`);
+        await db.insert(documents).values({
+          organisationId: orgId,
+          applicationId: appId,
+          name: file.name,
+          type: "DUS_REPORT",
+          storagePath,
+          uploadedBy: userId || null, 
+          updatedBy: userId || null,
+        });
+        console.log("Document DB insert successful.");
+    } catch (dbError) {
+        console.error("Database Error in saveUploadedFile:", dbError);
+        // If DB fails, we should probably delete the file we just uploaded to keep state clean?
+        // skipping cleanup for now to avoid logic complexity
+        throw new Error("Failed to save document metadata to database.");
+    }
 
-    console.log(`File written to disk at ${filepath}. inserting into DB...`);
-
-    await db.insert(documents).values({
-      organisationId: orgId,
-      applicationId: appId,
-      name: file.name,
-      type: "DUS_REPORT",
-      storagePath,
-      uploadedBy: userId || null, // Handle potentially missing userId
-      updatedBy: userId || null,
-    });
-    console.log("File metadata inserted into DB successfully.");
   } catch (error) {
-    console.error("Error in saveUploadedFile:", error);
-    throw error; // Re-throw to be caught by upper handler or show 500
+    console.error("Critical Error in saveUploadedFile:", error);
+    throw error;
   }
 }
 

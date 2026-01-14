@@ -187,6 +187,12 @@ export async function updateApplication(formData: FormData) {
 
   revalidatePath("/dashboard/applications");
   revalidatePath(`/dashboard/applications/${id}`);
+
+  const redirectTo = formData.get("redirectTo") as string;
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
+  
   redirect(`/dashboard/applications/${id}`);
 }
 

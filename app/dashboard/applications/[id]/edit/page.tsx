@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { applications, varieties, jurisdictions } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { applications, varieties, jurisdictions, documents } from "@/db/schema";
+import { eq, desc, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,13 +43,23 @@ export default async function EditApplicationPage({
   const allVarieties = await db.select().from(varieties);
   const allJurisdictions = await db.select().from(jurisdictions);
 
+  // Fetch the latest DUS document if any
+  const latestDusDoc = await db.query.documents.findFirst({
+    where: and(
+        eq(documents.applicationId, app.id),
+        eq(documents.type, 'DUS_REPORT')
+    ),
+    orderBy: [desc(documents.createdAt)]
+  });
+
   const isDus = app.status === 'DUS';
+  const backLink = isDus ? "/dashboard/applications?status=DUS" : `/dashboard/applications/${app.id}`;
 
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <div className="flex items-center gap-4">
-        <Link href={`/dashboard/applications/${app.id}`}>
+        <Link href={backLink}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -66,6 +76,8 @@ export default async function EditApplicationPage({
             <input type="hidden" name="id" value={app.id} />
              {/* Pass status to prevent it from being reset or nulled if logic requires it */}
             <input type="hidden" name="status" value={app.status || "Draft"} />
+             {/* Handle redirect on server side */}
+            <input type="hidden" name="redirectTo" value={backLink} />
             
             <div className="space-y-2">
               <Label htmlFor="varietyId">Variety</Label>
@@ -175,6 +187,14 @@ export default async function EditApplicationPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="dusFile">Upload DUS Report/Data</Label>
+                   {latestDusDoc && (
+                      <div className="text-sm text-green-600 mb-2 p-2 bg-green-50 rounded border border-green-200">
+                          Current File: <span className="font-semibold">{latestDusDoc.name}</span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                             (Uploading a new file will add to the record)
+                          </span>
+                      </div>
+                   )}
                   <Input type="file" name="dusFile" />
                 </div>
               </>
@@ -184,7 +204,7 @@ export default async function EditApplicationPage({
               <Button type="submit" className="flex-1">
                 Save Changes
               </Button>
-              <Link href={`/dashboard/applications/${app.id}`} className="flex-1">
+              <Link href={backLink} className="flex-1">
                 <Button variant="outline" type="button" className="w-full">
                   Cancel
                 </Button>

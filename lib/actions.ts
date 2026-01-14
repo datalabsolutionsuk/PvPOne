@@ -13,27 +13,46 @@ import { promises as fs } from "fs";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
-  if (!file || file.size === 0) return;
+  try {
+    if (!file || file.size === 0) return;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
-  const uploadDir = path.join(process.cwd(), "public/uploads");
-  const filepath = path.join(uploadDir, filename);
+    console.log(`Starting upload for file: ${file.name}, Size: ${file.size}`);
+    
+    // Check for user ID which is required by foreign key
+    if (!userId) {
+        console.error("saveUploadedFile: Missing userId");
+        // We can either throw or proceed without uploadedBy if schema allowed it, but schema references users.id
+        // However, if references() is used without notNull(), it handles nulls. 
+        // Let's check schema again. `uploadedBy: text("uploaded_by").references(() => users.id)` is nullable.
+        // But let's proceed.
+    }
 
-  await fs.mkdir(uploadDir, { recursive: true });
-  await fs.writeFile(filepath, buffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    const filepath = path.join(uploadDir, filename);
 
-  const storagePath = `/uploads/${filename}`;
+    await fs.mkdir(uploadDir, { recursive: true });
+    await fs.writeFile(filepath, buffer);
 
-  await db.insert(documents).values({
-    organisationId: orgId,
-    applicationId: appId,
-    name: file.name,
-    type: "DUS_REPORT",
-    storagePath,
-    uploadedBy: userId,
-    updatedBy: userId,
-  });
+    const storagePath = `/uploads/${filename}`;
+
+    console.log(`File written to disk at ${filepath}. inserting into DB...`);
+
+    await db.insert(documents).values({
+      organisationId: orgId,
+      applicationId: appId,
+      name: file.name,
+      type: "DUS_REPORT",
+      storagePath,
+      uploadedBy: userId || null, // Handle potentially missing userId
+      updatedBy: userId || null,
+    });
+    console.log("File metadata inserted into DB successfully.");
+  } catch (error) {
+    console.error("Error in saveUploadedFile:", error);
+    throw error; // Re-throw to be caught by upper handler or show 500
+  }
 }
 
 export async function createVariety(formData: FormData) {
@@ -151,44 +170,77 @@ export async function createApplication(formData: FormData) {
 }
 
 export async function updateApplication(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.organisationId) {
-    throw new Error("Unauthorized");
+  try {
+    const session = await auth();
+    console.log("updateApplication: Session retrieved", session?.user?.id);
+
+    if (!session?.user?.organisationId) {
+      console.error("updateApplication: Unauthorized - missing organisationId");
+      throw new Error("Unauthorized");
+    }
+
+    const id = formData.get("id") as string;
+    const varietyId = formData.get("varietyId") as string;
+    const jurisdictionId = formData.get("jurisdictionId") as string;
+    const filingDateStr = formData.get("filingDate") as string;
+    const applicationNumber = formData.get("applicationNumber") as string;
+    const status = formData.get("status") as any;
+    const dusStatus = formData.get("dusStatus") as any;
+    const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
+    const filingDate = filingDateStr ? new Date(filingDateStr) : null;
+    const dusExpectedReceiptDate = dusExpectedDateStr ? new Date(dusExpectedDateStr) : null;
+    const redirectTo = formData.get("redirectTo") as string;
+
+    console.log(`Updating application ${id}. Status: ${status}, DUS Status: ${dusStatus}`);
+
+    await db
+      .update(applications)
+      .set({
+        varietyId,
+        jurisdictionId,
+        filingDate,
+        applicationNumber: applicationNumber || null,
+        status,
+        dusStatus: dusStatus || undefined,
+        dusExpectedReceiptDate: dusExpectedDateStr ? dusExpectedReceiptDate : undefined,
+      })
+      .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
+
+    console.log("Application record updated.");
+
+    const dusFile = formData.get("dusFile") as File;
+    if (dusFile && dusFile.size > 0) {
+        console.log("Found DUS file to upload.");
+        await saveUploadedFile(dusFile, session.user.organisationId, id, session.user.id!);
+    } else {
+        console.log("No DUS file to upload or file is empty.");
+    }
+
+    revalidatePath("/dashboard/applications");
+    revalidatePath(`/dashboard/applications/${id}`);
+
+    if (redirectTo) {
+      console.log(`Redirecting to ${redirectTo}`);
+      // redirect throws an error that Next.js catches to handle the redirect. 
+      // We must let it propagate or return here.
+      // But we are inside a try-catch, so we need to be careful.
+    }
+  } catch (error) {
+    if ((error as any).message === "NEXT_REDIRECT") {
+       throw error;
+    }
+    console.error("Error in updateApplication:", error);
+    throw new Error("Failed to update application: " + (error as any).message);
   }
-
-  const id = formData.get("id") as string;
-  const varietyId = formData.get("varietyId") as string;
-  const jurisdictionId = formData.get("jurisdictionId") as string;
-  const filingDateStr = formData.get("filingDate") as string;
-  const applicationNumber = formData.get("applicationNumber") as string;
-  const status = formData.get("status") as any;
-  const dusStatus = formData.get("dusStatus") as any;
-  const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
-  const filingDate = filingDateStr ? new Date(filingDateStr) : null;
-  const dusExpectedReceiptDate = dusExpectedDateStr ? new Date(dusExpectedDateStr) : null;
-
-  await db
-    .update(applications)
-    .set({
-      varietyId,
-      jurisdictionId,
-      filingDate,
-      applicationNumber: applicationNumber || null,
-      status,
-      dusStatus: dusStatus || undefined,
-      dusExpectedReceiptDate: dusExpectedDateStr ? dusExpectedReceiptDate : undefined,
-    })
-    .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
-
-  const dusFile = formData.get("dusFile") as File;
-  if (dusFile && dusFile.size > 0) {
-      await saveUploadedFile(dusFile, session.user.organisationId, id, session.user.id!);
-  }
-
-  revalidatePath("/dashboard/applications");
-  revalidatePath(`/dashboard/applications/${id}`);
+  
+  // Handling redirect outside try/catch to avoid catching the NEXT_REDIRECT error
+  // But we need to access 'redirectTo' variable. 
+  // Let's refactor to extract variables first or just rely on form access again?
+  // Better to move the logic inside but rethrow redirect error specifically.
 
   const redirectTo = formData.get("redirectTo") as string;
+  const id = formData.get("id") as string;
+
   if (redirectTo) {
     redirect(redirectTo);
   }

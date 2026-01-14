@@ -690,13 +690,13 @@ export async function createTask(formData: FormData) {
       // But we already created the task.
       // Ideally we should wrap in transaction.
     } else {
-      const buffer = Buffer.from(await file.arrayBuffer());
+      const buffer = new Uint8Array(await file.arrayBuffer());
       const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
       const uploadDir = path.join(process.cwd(), "public/uploads");
       
       try {
-        await fs.mkdir(uploadDir, { recursive: true });
-        await fs.writeFile(path.join(uploadDir, filename), buffer);
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(path.join(uploadDir, filename), buffer);
         
         await db.insert(documents).values({
           organisationId: organisationId as string,

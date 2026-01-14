@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import path from "path";
 import fs from "fs/promises";
+import { Buffer } from "node:buffer";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {

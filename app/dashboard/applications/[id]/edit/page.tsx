@@ -124,6 +124,35 @@ export default async function EditApplicationPage({
               </Select>
             </div>
 
+            {/* DUS Fields (Shown when relevant, or always accessible in editing) */}
+            <div className="space-y-6 pt-4 border-t">
+              <h3 className="text-lg font-semibold">DUS Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dusStatus">DUS Approval Status</Label>
+                  <Select name="dusStatus" defaultValue={app.dusStatus || "Waiting"}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select DUS status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Waiting">Waiting</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dusExpectedDate">DUS Expected Receipt Date</Label>
+                  <Input 
+                    type="date" 
+                    id="dusExpectedDate"
+                    name="dusExpectedDate" 
+                    defaultValue={app.dusExpectedReceiptDate ? app.dusExpectedReceiptDate.toISOString().split('T')[0] : ''}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1">
                 Update Application

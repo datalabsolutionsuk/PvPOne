@@ -126,7 +126,10 @@ export async function updateApplication(formData: FormData) {
   const filingDateStr = formData.get("filingDate") as string;
   const applicationNumber = formData.get("applicationNumber") as string;
   const status = formData.get("status") as any;
+  const dusStatus = formData.get("dusStatus") as any;
+  const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
   const filingDate = filingDateStr ? new Date(filingDateStr) : null;
+  const dusExpectedReceiptDate = dusExpectedDateStr ? new Date(dusExpectedDateStr) : null;
 
   await db
     .update(applications)
@@ -136,6 +139,8 @@ export async function updateApplication(formData: FormData) {
       filingDate,
       applicationNumber: applicationNumber || null,
       status,
+      dusStatus: dusStatus || undefined,
+      dusExpectedReceiptDate: dusExpectedDateStr ? dusExpectedReceiptDate : undefined,
     })
     .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
 

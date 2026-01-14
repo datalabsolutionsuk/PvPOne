@@ -33,6 +33,8 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "Withdrawn",
 ]);
 
+export const dusStatusEnum = pgEnum("dus_status", ["Waiting", "Approved"]);
+
 // --- Auth & Multi-tenancy ---
 
 export const organisations = pgTable("organisations", {
@@ -218,6 +220,8 @@ export const applications = pgTable("applications", {
   grantDate: date("grant_date", { mode: "date" }), // Certificate issued date
   expiryDate: date("expiry_date", { mode: "date" }), // Computed term end
   nextRenewalDate: date("next_renewal_date", { mode: "date" }),
+  dusExpectedReceiptDate: date("dus_expected_receipt_date", { mode: "date" }),
+  dusStatus: dusStatusEnum("dus_status").default("Waiting"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });

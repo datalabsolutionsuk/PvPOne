@@ -61,6 +61,9 @@ export default async function ApplicationDetailsPage({
     notFound();
   }
 
+  // --- Helper to show DUS Info if present ---
+  const isDusRelevant = app.status === 'DUS' || app.dusStatus; 
+
   // Fetch Deadlines
   const deadlinesConditions = [
     eq(tasks.applicationId, app.id),
@@ -176,6 +179,15 @@ export default async function ApplicationDetailsPage({
             <div className="text-2xl font-bold">
               {app.filingDate ? format(app.filingDate, "PP") : "N/A"}
             </div>
+            {(app.status === 'DUS' || app.dusStatus) && (
+              <div className="mt-2 pt-2 border-t">
+                 <p className="text-xs font-semibold text-muted-foreground">DUS Status</p>
+                 <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{app.dusStatus || "Waiting"}</span>
+                    {app.dusExpectedReceiptDate && <span className="text-xs text-muted-foreground bg-slate-100 px-1 rounded">Exp: {format(app.dusExpectedReceiptDate, "MMM d")}</span>}
+                 </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

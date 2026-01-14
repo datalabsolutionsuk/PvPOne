@@ -33,23 +33,20 @@ export default async function EditApplicationPage({
   const allVarieties = await db.select().from(varieties);
   const allJurisdictions = await db.select().from(jurisdictions);
 
-  const isDus = app.status === 'DUS' || app.dusStatus;
-
   return (
-    <div className="h-full overflow-y-auto pr-2">
-      <div className="max-w-2xl mx-auto space-y-6 pb-8">
-        <div className="flex items-center gap-4">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-4">
         <Link href={`/dashboard/applications/${app.id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">{isDus ? "Edit DUS Record" : "Edit Application"}</h1>
+        <h1 className="text-3xl font-bold">Edit Application</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isDus ? "DUS Details" : "Application Details"}</CardTitle>
+          <CardTitle>Application Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updateApplication} className="space-y-4">
@@ -108,7 +105,7 @@ export default async function EditApplicationPage({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Application Status</Label>
+              <Label htmlFor="status">Status</Label>
               <Select name="status" defaultValue={app.status} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -128,8 +125,8 @@ export default async function EditApplicationPage({
             </div>
 
             {/* DUS Fields (Shown when relevant, or always accessible in editing) */}
-            <div className={`space-y-6 pt-4 ${!isDus ? 'border-t' : ''}`}>
-              {!isDus && <h3 className="text-lg font-semibold">DUS Information</h3>}
+            <div className="space-y-6 pt-4 border-t">
+              <h3 className="text-lg font-semibold">DUS Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dusStatus">DUS Approval Status</Label>
@@ -154,7 +151,7 @@ export default async function EditApplicationPage({
                   />
                 </div>
 
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2">
                    <Label htmlFor="dusFile">Upload New DUS Report/Data</Label>
                    <Input type="file" name="dusFile" />
                 </div>
@@ -163,7 +160,7 @@ export default async function EditApplicationPage({
 
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1">
-                Save Changes
+                Update Application
               </Button>
               <Link href={`/dashboard/applications/${app.id}`} className="flex-1">
                 <Button variant="outline" type="button" className="w-full">
@@ -174,7 +171,6 @@ export default async function EditApplicationPage({
           </form>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }

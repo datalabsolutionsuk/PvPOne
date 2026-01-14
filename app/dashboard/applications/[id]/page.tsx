@@ -192,6 +192,13 @@ export default async function ApplicationDetailsPage({
                     <span className="text-sm font-medium">{app.dusStatus || "Waiting"}</span>
                     {app.dusExpectedReceiptDate && <span className="text-xs text-muted-foreground bg-slate-100 px-1 rounded">Exp: {format(app.dusExpectedReceiptDate, "MMM d")}</span>}
                  </div>
+                 {uploadedFiles.length > 0 && (
+                   <div className="mt-2 text-xs">
+                     <a href={uploadedFiles[0].storagePath} download={uploadedFiles[0].name} className="text-blue-600 hover:underline">
+                        View DUS Report
+                     </a>
+                   </div>
+                 )}
               </div>
             )}
           </CardContent>

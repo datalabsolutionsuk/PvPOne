@@ -16,12 +16,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateApplication } from "@/lib/actions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
+import { format } from "date-fns";
 
 export default async function EditApplicationPage({
   params,
 }: {
   params: { id: string };
 }) {
+  const organisationId = await getCurrentOrganisationId();
+  const isSuper = await isSuperAdmin();
+
   const app = await db.query.applications.findFirst({
     where: eq(applications.id, params.id),
   });
@@ -30,27 +35,37 @@ export default async function EditApplicationPage({
     notFound();
   }
 
+  // Security check
+  if (app.organisationId !== organisationId && !isSuper) {
+    return <div>Unauthorized</div>;
+  }
+
   const allVarieties = await db.select().from(varieties);
   const allJurisdictions = await db.select().from(jurisdictions);
 
+  const isDus = app.status === 'DUS';
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="h-full overflow-y-auto pr-2">
+      <div className="max-w-2xl mx-auto space-y-6 pb-8">
+        <div className="flex items-center gap-4">
         <Link href={`/dashboard/applications/${app.id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">Edit Application</h1>
+        <h1 className="text-3xl font-bold">{isDus ? "Edit DUS Record" : "Edit Application"}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Application Details</CardTitle>
+          <CardTitle>{isDus ? "DUS Details" : "Application Details"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updateApplication} className="space-y-4">
             <input type="hidden" name="id" value={app.id} />
+             {/* Pass status to prevent it from being reset or nulled if logic requires it */}
+            <input type="hidden" name="status" value={app.status || "Draft"} />
             
             <div className="space-y-2">
               <Label htmlFor="varietyId">Variety</Label>
@@ -94,45 +109,53 @@ export default async function EditApplicationPage({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="filingDate">Filing Date</Label>
-              <Input 
-                type="date" 
-                name="filingDate" 
-                defaultValue={app.filingDate ? app.filingDate.toISOString().split('T')[0] : ''}
-                required 
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select name="status" defaultValue={app.status} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Draft">Draft</SelectItem>
-                  <SelectItem value="Filed">Filed</SelectItem>
-                  <SelectItem value="Formality_Check">Formality Check</SelectItem>
-                  <SelectItem value="DUS">DUS</SelectItem>
-                  <SelectItem value="Exam">Exam</SelectItem>
-                  <SelectItem value="Published_Opp">Published / Opposition</SelectItem>
-                  <SelectItem value="Certificate_Issued">Certificate Issued</SelectItem>
-                  <SelectItem value="Refused">Refused</SelectItem>
-                  <SelectItem value="Withdrawn">Withdrawn</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* DUS Fields (Shown when relevant, or always accessible in editing) */}
-            <div className="space-y-6 pt-4 border-t">
-              <h3 className="text-lg font-semibold">DUS Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+            {!isDus && (
+              <>
                 <div className="space-y-2">
-                  <Label htmlFor="dusStatus">DUS Approval Status</Label>
+                  <Label htmlFor="filingDate">Filing Date</Label>
+                  <Input 
+                    type="date" 
+                    id="filingDate" 
+                    name="filingDate" 
+                    defaultValue={app.filingDate ? format(app.filingDate, "yyyy-MM-dd") : ""}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={app.status}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Draft">Draft</SelectItem>
+                      <SelectItem value="Filed">Filed</SelectItem>
+                      <SelectItem value="Formality_Check">Formality Check</SelectItem>
+                      <SelectItem value="DUS">DUS</SelectItem>
+                      <SelectItem value="Exam">Exam</SelectItem>
+                      <SelectItem value="Published_Opp">Published / Opposition</SelectItem>
+                      <SelectItem value="Certificate_Issued">Certificate Issued</SelectItem>
+                      <SelectItem value="Refused">Refused</SelectItem>
+                      <SelectItem value="Withdrawn">Withdrawn</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            
+            {/* Preserve filingDate if hidden */}
+            {isDus && app.filingDate && (
+                <input type="hidden" name="filingDate" value={format(app.filingDate, "yyyy-MM-dd")} />
+            )}
+
+            {isDus && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="dusStatus">DUS Status</Label>
                   <Select name="dusStatus" defaultValue={app.dusStatus || "Waiting"}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select DUS status" />
+                      <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Waiting">Waiting</SelectItem>
@@ -144,23 +167,22 @@ export default async function EditApplicationPage({
                 <div className="space-y-2">
                   <Label htmlFor="dusExpectedDate">DUS Expected Receipt Date</Label>
                   <Input 
-                    type="date" 
-                    id="dusExpectedDate"
-                    name="dusExpectedDate" 
-                    defaultValue={app.dusExpectedReceiptDate ? app.dusExpectedReceiptDate.toISOString().split('T')[0] : ''}
+                      type="date" 
+                      name="dusExpectedDate"
+                      defaultValue={app.dusExpectedReceiptDate ? format(app.dusExpectedReceiptDate, "yyyy-MM-dd") : ""}
                   />
                 </div>
 
                 <div className="space-y-2">
-                   <Label htmlFor="dusFile">Upload New DUS Report/Data</Label>
-                   <Input type="file" name="dusFile" />
+                  <Label htmlFor="dusFile">Upload DUS Report/Data</Label>
+                  <Input type="file" name="dusFile" />
                 </div>
-              </div>
-            </div>
+              </>
+            )}
 
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1">
-                Update Application
+                Save Changes
               </Button>
               <Link href={`/dashboard/applications/${app.id}`} className="flex-1">
                 <Button variant="outline" type="button" className="w-full">
@@ -171,6 +193,7 @@ export default async function EditApplicationPage({
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

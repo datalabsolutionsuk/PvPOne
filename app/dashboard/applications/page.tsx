@@ -175,9 +175,15 @@ export default async function ApplicationsPage({
                     </TableCell>
                   )}
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/applications/${app.id}`}>View</Link>
-                    </Button>
+                    {searchParams.status === 'DUS' ? (
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/applications/${app.id}/edit`}>Edit</Link>
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/applications/${app.id}`}>View</Link>
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

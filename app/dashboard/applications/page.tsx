@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applications, varieties, jurisdictions } from "@/db/schema";
+import { applications, varieties, jurisdictions, documents } from "@/db/schema";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import {
   Table,
@@ -16,7 +16,7 @@ import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { Card, CardContent } from "@/components/ui/card";
 import { PaginationLimitSelect } from "@/components/pagination-limit-select";
 import { SortableColumn } from "@/components/ui/sortable-column";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 
 export default async function ApplicationsPage({
   searchParams,
@@ -84,6 +84,11 @@ export default async function ApplicationsPage({
         jurisdictionCode: jurisdictions.code,
         createdAt: applications.createdAt,
         updatedAt: applications.updatedAt,
+        hasDusFile: sql<boolean>`EXISTS(
+          SELECT 1 FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'DUS_REPORT'
+        )`
       })
       .from(applications)
       .leftJoin(varieties, eq(applications.varietyId, varieties.id))
@@ -139,6 +144,7 @@ export default async function ApplicationsPage({
                   <>
                      <TableHead>DUS Status</TableHead>
                      <TableHead>Expected Receipt</TableHead>
+                     <TableHead className="text-center">File</TableHead>
                   </>
                 ) : (
                   <TableHead><SortableColumn title="Status" column="status" /></TableHead>
@@ -160,6 +166,9 @@ export default async function ApplicationsPage({
                     <>
                       <TableCell>{app.dusStatus || "-"}</TableCell>
                       <TableCell>{app.dusExpectedReceiptDate ? format(app.dusExpectedReceiptDate, "yyyy-MM-dd") : "-"}</TableCell>
+                      <TableCell className="text-center">
+                        {app.hasDusFile && <Check className="h-4 w-4 mx-auto text-green-600" />}
+                      </TableCell>
                     </>
                   ) : (
                     <TableCell>{app.status}</TableCell>

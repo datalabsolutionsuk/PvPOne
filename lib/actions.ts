@@ -8,41 +8,28 @@ import { AuthError } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
   try {
     if (!file || file.size === 0) return;
 
-    console.log(`Starting upload for file: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
+    console.log(`Processing upload for file: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
     
     // Check for user ID which is required by foreign key
     if (!userId) {
         console.error("saveUploadedFile: Missing userId");
     }
 
-    // 1. File System Operations
-    let storagePath = "";
-    try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = new Uint8Array(arrayBuffer);
-        const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`; // Safer regex
-        const uploadDir = path.join(process.cwd(), "public/uploads");
-        const filepath = path.join(uploadDir, filename);
+    // Convert file to Base64 Data URI for storage in DB
+    // This avoids writing to Read-Only file systems (like Vercel)
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const mimeType = file.type || 'application/octet-stream';
+    const storagePath = `data:${mimeType};base64,${base64}`;
 
-        console.log(`Writing file to: ${filepath}`);
-        await mkdir(uploadDir, { recursive: true });
-        await writeFile(filepath, buffer);
-        storagePath = `/uploads/${filename}`;
-        console.log("File write successful.");
-    } catch (fsError) {
-        console.error("FileSystem Error in saveUploadedFile:", fsError);
-        throw new Error("Failed to save file to disk: " + (fsError as Error).message);
-    }
-
-    // 2. Database Operations
+    // Database Operations
     try {
         console.log(`Inserting document metadata into DB. Org: ${orgId}, App: ${appId}, User: ${userId}`);
         await db.insert(documents).values({
@@ -50,7 +37,7 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
           applicationId: appId,
           name: file.name,
           type: "DUS_REPORT",
-          storagePath,
+          storagePath, // Storing Data URI directly
           uploadedBy: userId || null, 
           updatedBy: userId || null,
         });
@@ -690,21 +677,19 @@ export async function createTask(formData: FormData) {
       // But we already created the task.
       // Ideally we should wrap in transaction.
     } else {
-      const buffer = new Uint8Array(await file.arrayBuffer());
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
-      const uploadDir = path.join(process.cwd(), "public/uploads");
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const base64 = buffer.toString('base64');
+      const mimeType = file.type || 'application/octet-stream';
+      const storagePath = `data:${mimeType};base64,${base64}`;
       
       try {
-        await mkdir(uploadDir, { recursive: true });
-        await writeFile(path.join(uploadDir, filename), buffer);
-        
         await db.insert(documents).values({
           organisationId: organisationId as string,
           applicationId,
           taskId: taskId,
           name: file.name,
           type: title, // Use task title as document type
-          storagePath: `/uploads/${filename}`,
+          storagePath,
           uploadedBy: session.user.id,
         });
 

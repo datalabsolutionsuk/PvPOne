@@ -28,13 +28,17 @@ interface Jurisdiction {
 interface NewApplicationFormProps {
   varieties: Variety[];
   jurisdictions: Jurisdiction[];
+  type?: string;
 }
 
-export function NewApplicationForm({ varieties, jurisdictions }: NewApplicationFormProps) {
+export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplicationFormProps) {
   const [isNewVariety, setIsNewVariety] = useState(false);
+  const isDus = type === 'DUS';
 
   return (
     <form action={createApplication} className="space-y-4">
+      {isDus && <input type="hidden" name="initialStatus" value="DUS" />}
+      
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <Label htmlFor="varietyId">Variety</Label>
@@ -94,12 +98,34 @@ export function NewApplicationForm({ varieties, jurisdictions }: NewApplicationF
 
       <div className="space-y-2">
         <Label htmlFor="filingDate">Filing Date</Label>
-        <Input type="date" name="filingDate" required />
+        <Input type="date" name="filingDate" required={!isDus} />
       </div>
+
+      {isDus && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="dusStatus">DUS Status</Label>
+            <Select name="dusStatus" defaultValue="Waiting">
+              <SelectTrigger>
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Waiting">Waiting</SelectItem>
+                <SelectItem value="Approved">Approved</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dusExpectedDate">DUS Expected Receipt Date</Label>
+            <Input type="date" name="dusExpectedDate" />
+          </div>
+        </>
+      )}
 
       <div className="flex gap-2 pt-4">
         <Button type="submit" className="flex-1">
-          Create Application
+          {isDus ? "Create DUS Record" : "Create Application"}
         </Button>
       </div>
     </form>

@@ -66,6 +66,10 @@ export async function createApplication(formData: FormData) {
 
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
+  const initialStatus = (formData.get("initialStatus") as "Draft" | "Filed" | "DUS" | undefined) || "Filed";
+  const dusStatus = formData.get("dusStatus") as "Waiting" | "Approved" | undefined;
+  const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
+  
   const filingDate = filingDateStr ? new Date(filingDateStr) : new Date();
   
   // Generate Application Number: ClientName-4DigitNumber-Year
@@ -92,9 +96,11 @@ export async function createApplication(formData: FormData) {
       organisationId,
       varietyId,
       jurisdictionId,
-      status: "Filed", // Assuming we are filing immediately for MVP flow
+      status: initialStatus,
       filingDate: filingDate,
       applicationNumber: generatedAppNumber,
+      dusStatus: dusStatus || undefined,
+      dusExpectedReceiptDate: dusExpectedDateStr ? new Date(dusExpectedDateStr) : undefined,
     })
     .returning();
 

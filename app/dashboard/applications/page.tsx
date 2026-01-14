@@ -116,7 +116,9 @@ export default async function ApplicationsPage({
           {searchParams.status ? `${searchParams.status} Applications` : "Applications"}
         </h2>
         <Button asChild>
-          <Link href="/dashboard/applications/new">New Application</Link>
+          <Link href={searchParams.status === 'DUS' ? "/dashboard/applications/new?type=DUS" : "/dashboard/applications/new"}>
+            {searchParams.status === 'DUS' ? "New DUS" : "New Application"}
+          </Link>
         </Button>
       </div>
 

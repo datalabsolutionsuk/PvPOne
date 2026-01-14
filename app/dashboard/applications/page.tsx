@@ -40,6 +40,8 @@ export default async function ApplicationsPage({
     id: string;
     appNumber: string | null;
     status: "Draft" | "Filed" | "Formality_Check" | "DUS" | "Exam" | "Published_Opp" | "Certificate_Issued" | "Refused" | "Withdrawn";
+    dusStatus: "Waiting" | "Approved" | null;
+    dusExpectedReceiptDate: Date | null;
     filingDate: Date | null;
     varietyName: string | null;
     jurisdictionCode: string | null;
@@ -75,6 +77,8 @@ export default async function ApplicationsPage({
         id: applications.id,
         appNumber: applications.applicationNumber,
         status: applications.status,
+        dusStatus: applications.dusStatus,
+        dusExpectedReceiptDate: applications.dusExpectedReceiptDate,
         filingDate: applications.filingDate,
         varietyName: varieties.name,
         jurisdictionCode: jurisdictions.code,
@@ -130,7 +134,16 @@ export default async function ApplicationsPage({
                 <TableHead><SortableColumn title="App Number" column="appNumber" /></TableHead>
                 <TableHead><SortableColumn title="Variety" column="variety" /></TableHead>
                 <TableHead><SortableColumn title="Jurisdiction" column="jurisdiction" /></TableHead>
-                <TableHead><SortableColumn title="Status" column="status" /></TableHead>
+                
+                {searchParams.status === 'DUS' ? (
+                  <>
+                     <TableHead>DUS Status</TableHead>
+                     <TableHead>Expected Receipt</TableHead>
+                  </>
+                ) : (
+                  <TableHead><SortableColumn title="Status" column="status" /></TableHead>
+                )}
+
                 <TableHead><SortableColumn title="Filing Date" column="filingDate" /></TableHead>
                 {isSuper && <TableHead><SortableColumn title="Created" column="createdAt" /></TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
@@ -142,7 +155,16 @@ export default async function ApplicationsPage({
                   <TableCell className="font-medium">{app.appNumber || "N/A"}</TableCell>
                   <TableCell>{app.varietyName}</TableCell>
                   <TableCell>{app.jurisdictionCode}</TableCell>
-                  <TableCell>{app.status}</TableCell>
+                  
+                  {searchParams.status === 'DUS' ? (
+                    <>
+                      <TableCell>{app.dusStatus || "-"}</TableCell>
+                      <TableCell>{app.dusExpectedReceiptDate ? format(app.dusExpectedReceiptDate, "yyyy-MM-dd") : "-"}</TableCell>
+                    </>
+                  ) : (
+                    <TableCell>{app.status}</TableCell>
+                  )}
+
                   <TableCell>
                     {app.filingDate ? format(app.filingDate, "yyyy-MM-dd") : "-"}
                   </TableCell>

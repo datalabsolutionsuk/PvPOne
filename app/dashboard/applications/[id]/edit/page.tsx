@@ -150,6 +150,11 @@ export default async function EditApplicationPage({
                     defaultValue={app.dusExpectedReceiptDate ? app.dusExpectedReceiptDate.toISOString().split('T')[0] : ''}
                   />
                 </div>
+
+                <div className="space-y-2">
+                   <Label htmlFor="dusFile">Upload New DUS Report/Data</Label>
+                   <Input type="file" name="dusFile" />
+                </div>
               </div>
             </div>
 

@@ -120,6 +120,11 @@ export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplic
             <Label htmlFor="dusExpectedDate">DUS Expected Receipt Date</Label>
             <Input type="date" name="dusExpectedDate" />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dusFile">Upload DUS Report/Data</Label>
+            <Input type="file" name="dusFile" />
+          </div>
         </>
       )}
 

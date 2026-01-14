@@ -12,6 +12,30 @@ import path from "path";
 import { promises as fs } from "fs";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
+async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
+  if (!file || file.size === 0) return;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+  const uploadDir = path.join(process.cwd(), "public/uploads");
+  const filepath = path.join(uploadDir, filename);
+
+  await fs.mkdir(uploadDir, { recursive: true });
+  await fs.writeFile(filepath, buffer);
+
+  const storagePath = `/uploads/${filename}`;
+
+  await db.insert(documents).values({
+    organisationId: orgId,
+    applicationId: appId,
+    name: file.name,
+    type: "DUS_REPORT",
+    storagePath,
+    uploadedBy: userId,
+    updatedBy: userId,
+  });
+}
+
 export async function createVariety(formData: FormData) {
   const organisationId = await getCurrentOrganisationId();
   if (!organisationId) {
@@ -104,6 +128,12 @@ export async function createApplication(formData: FormData) {
     })
     .returning();
 
+  // Handle DUS File Upload
+  const dusFile = formData.get("dusFile") as File;
+  if (dusFile && dusFile.size > 0) {
+     await saveUploadedFile(dusFile, organisationId, app.id, session.user.id);
+  }
+
   // 2. Trigger Rules Engine
   await RulesEngine.generateTasksForApplication(app.id, "FILING_DATE");
 
@@ -149,6 +179,11 @@ export async function updateApplication(formData: FormData) {
       dusExpectedReceiptDate: dusExpectedDateStr ? dusExpectedReceiptDate : undefined,
     })
     .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
+
+  const dusFile = formData.get("dusFile") as File;
+  if (dusFile && dusFile.size > 0) {
+      await saveUploadedFile(dusFile, session.user.organisationId, id, session.user.id!);
+  }
 
   revalidatePath("/dashboard/applications");
   revalidatePath(`/dashboard/applications/${id}`);

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { applications, varieties, jurisdictions, tasks, queries, messages } from "@/db/schema";
+import { applications, varieties, jurisdictions, tasks, queries, messages, documents as uploadedFilesTable } from "@/db/schema";
 import { eq, asc, desc, and, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
@@ -108,6 +108,12 @@ export default async function ApplicationDetailsPage({
   const totalDocuments = Number(documentsCountRes[0].count);
   const totalDocumentsPages = Math.ceil(totalDocuments / pageSize);
 
+  const uploadedFiles = await db
+    .select()
+    .from(uploadedFilesTable)
+    .where(eq(uploadedFilesTable.applicationId, app.id))
+    .orderBy(desc(uploadedFilesTable.createdAt));
+
   const appQueries = await db.query.queries.findMany({
     where: eq(queries.applicationId, app.id),
     with: {
@@ -135,7 +141,7 @@ export default async function ApplicationDetailsPage({
           </Link>
           <div className="flex-1 flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">
-              Application Details
+              {isDusRelevant ? "DUS Details" : "Application Details"}
             </h2>
             <div className="flex items-center gap-2">
               <Badge variant={app.status === "Filed" ? "default" : "secondary"}>
@@ -372,6 +378,47 @@ export default async function ApplicationDetailsPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Uploaded Files</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>File Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Uploaded By</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {uploadedFiles.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    No files uploaded.
+                  </TableCell>
+                </TableRow>
+              )}
+              {uploadedFiles.map((file) => (
+                <TableRow key={file.id}>
+                  <TableCell>{file.name}</TableCell>
+                  <TableCell>{file.type}</TableCell>
+                  <TableCell>{file.uploadedBy || "-"}</TableCell>
+                  <TableCell>{file.createdAt ? format(file.createdAt, "PP") : "-"}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild size="sm" variant="outline">
+                      <a href={file.storagePath} download>Download</a>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <div className="mt-6">
         <Card>

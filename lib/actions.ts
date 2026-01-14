@@ -9,15 +9,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import path from "path";
-import fs from "fs/promises";
-import { Buffer } from "node:buffer";
+import { mkdir, writeFile } from "fs/promises";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
 async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
   try {
     if (!file || file.size === 0) return;
 
-    console.log(`Starting upload for file: ${file.name}, Size: ${file.size}`);
+    console.log(`Starting upload for file: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
     
     // Check for user ID which is required by foreign key
     if (!userId) {
@@ -27,24 +26,25 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
     // 1. File System Operations
     let storagePath = "";
     try {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
+        const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`; // Safer regex
         const uploadDir = path.join(process.cwd(), "public/uploads");
         const filepath = path.join(uploadDir, filename);
 
         console.log(`Writing file to: ${filepath}`);
-        await fs.mkdir(uploadDir, { recursive: true });
-        await fs.writeFile(filepath, buffer);
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(filepath, buffer);
         storagePath = `/uploads/${filename}`;
         console.log("File write successful.");
     } catch (fsError) {
         console.error("FileSystem Error in saveUploadedFile:", fsError);
-        throw new Error("Failed to save file to disk.");
+        throw new Error("Failed to save file to disk: " + (fsError as Error).message);
     }
 
     // 2. Database Operations
     try {
-        console.log(`Inserting document metadata into DB. Org: ${orgId}, App: ${appId}`);
+        console.log(`Inserting document metadata into DB. Org: ${orgId}, App: ${appId}, User: ${userId}`);
         await db.insert(documents).values({
           organisationId: orgId,
           applicationId: appId,
@@ -57,9 +57,7 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
         console.log("Document DB insert successful.");
     } catch (dbError) {
         console.error("Database Error in saveUploadedFile:", dbError);
-        // If DB fails, we should probably delete the file we just uploaded to keep state clean?
-        // skipping cleanup for now to avoid logic complexity
-        throw new Error("Failed to save document metadata to database.");
+        throw new Error("Failed to save document metadata to database: " + (dbError as Error).message);
     }
 
   } catch (error) {

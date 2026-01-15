@@ -123,8 +123,8 @@ export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplic
             </div>
 
             <div className="space-y-2">
-            <Label htmlFor="certificateFile">Upload Certificate</Label>
-            <Input type="file" name="certificateFile" />
+            <Label htmlFor="certificateFile">Upload Certificate(s)</Label>
+            <Input type="file" name="certificateFile" multiple />
             </div>
         </>
       )}

@@ -201,16 +201,16 @@ export default async function EditApplicationPage({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="certificateFile">Upload Certificate</Label>
+                  <Label htmlFor="certificateFile">Upload Certificate(s)</Label>
                    {latestCertDoc && (
                       <div className="text-sm text-green-600 mb-2 p-2 bg-green-50 rounded border border-green-200">
-                          Current File: <span className="font-semibold">{latestCertDoc.name}</span>
+                          Latest File: <span className="font-semibold">{latestCertDoc.name}</span>
                           <span className="text-muted-foreground ml-2 text-xs">
-                             (Uploading a new file will add to the record)
+                             (You can upload additional files)
                           </span>
                       </div>
                    )}
-                  <Input type="file" name="certificateFile" />
+                  <Input type="file" name="certificateFile" multiple />
                 </div>
               </>
             )}

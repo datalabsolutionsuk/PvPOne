@@ -158,9 +158,11 @@ export async function createApplication(formData: FormData) {
   }
 
   // Handle Certificate Upload
-  const certificateFile = formData.get("certificateFile") as File;
-  if (certificateFile && certificateFile.size > 0) {
-     await saveUploadedFile(certificateFile, organisationId, app.id, session.user.id, "PBR_CERTIFICATE");
+  const certificateFiles = formData.getAll("certificateFile") as File[];
+  for (const file of certificateFiles) {
+     if (file && file.size > 0) {
+        await saveUploadedFile(file, organisationId, app.id, session.user.id, "PBR_CERTIFICATE");
+     }
   }
 
 
@@ -235,10 +237,14 @@ export async function updateApplication(formData: FormData) {
         console.log("No DUS file to upload or file is empty.");
     }
 
-    const certificateFile = formData.get("certificateFile") as File;
-    if (certificateFile && certificateFile.size > 0) {
-        console.log("Found Certificate file to upload.");
-        await saveUploadedFile(certificateFile, session.user.organisationId, id, session.user.id!, "PBR_CERTIFICATE");
+    const certificateFiles = formData.getAll("certificateFile") as File[];
+    if (certificateFiles.length > 0) {
+        console.log(`Found ${certificateFiles.length} Certificate files to upload.`);
+        for (const file of certificateFiles) {
+            if (file && file.size > 0) {
+                await saveUploadedFile(file, session.user.organisationId, id, session.user.id!, "PBR_CERTIFICATE");
+            }
+        }
     }
 
     revalidatePath("/dashboard/applications");

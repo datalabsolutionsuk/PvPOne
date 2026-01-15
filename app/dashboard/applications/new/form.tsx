@@ -34,10 +34,12 @@ interface NewApplicationFormProps {
 export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplicationFormProps) {
   const [isNewVariety, setIsNewVariety] = useState(false);
   const isDus = type === 'DUS';
+  const isCertificate = type === 'Certificate_Issued';
 
   return (
     <form action={createApplication} className="space-y-4">
       {isDus && <input type="hidden" name="initialStatus" value="DUS" />}
+      {isCertificate && <input type="hidden" name="initialStatus" value="Certificate_Issued" />}
       
       <div className="space-y-2">
         <div className="flex justify-between items-center">
@@ -101,6 +103,32 @@ export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplic
         <Input type="date" name="filingDate" required={!isDus} />
       </div>
 
+       {isCertificate && (
+        <>
+            <div className="space-y-2">
+            <Label htmlFor="grantDate">Date of Issuance</Label>
+            <Input 
+                type="date" 
+                name="grantDate"
+                required
+            />
+            </div>
+
+            <div className="space-y-2">
+            <Label htmlFor="expiryDate">Date of Expiry</Label>
+            <Input 
+                type="date" 
+                name="expiryDate"
+            />
+            </div>
+
+            <div className="space-y-2">
+            <Label htmlFor="certificateFile">Upload Certificate</Label>
+            <Input type="file" name="certificateFile" />
+            </div>
+        </>
+      )}
+
       {isDus && (
         <>
           <div className="space-y-2">
@@ -130,7 +158,7 @@ export function NewApplicationForm({ varieties, jurisdictions, type }: NewApplic
 
       <div className="flex gap-2 pt-4">
         <Button type="submit" className="flex-1">
-          {isDus ? "Create DUS Record" : "Create Application"}
+          {isDus ? "Create DUS Record" : isCertificate ? "Create Certificate" : "Create Application"}
         </Button>
       </div>
     </form>

@@ -156,11 +156,24 @@ export default async function ApplicationsPage({
     <div className="space-y-6 h-full flex flex-col">
       <div className="flex items-center justify-between flex-shrink-0">
         <h2 className="text-3xl font-bold tracking-tight">
-          {searchParams.status ? `${searchParams.status} Applications` : "Applications"}
+          {searchParams.status ? (
+             searchParams.status === 'Certificate_Issued' ? "PBR Certificates" 
+             : `${searchParams.status} Applications`
+          ) : "Applications"}
         </h2>
         <Button asChild>
-          <Link href={searchParams.status === 'DUS' ? "/dashboard/applications/new?type=DUS" : "/dashboard/applications/new"}>
-            {searchParams.status === 'DUS' ? "New DUS" : "New Application"}
+          <Link href={
+            searchParams.status === 'DUS' 
+              ? "/dashboard/applications/new?type=DUS" 
+              : searchParams.status === 'Certificate_Issued'
+              ? "/dashboard/applications/new?type=Certificate_Issued"
+              : "/dashboard/applications/new"
+          }>
+            {searchParams.status === 'DUS' 
+              ? "New DUS" 
+              : searchParams.status === 'Certificate_Issued'
+              ? "New Certificate"
+              : "New Application"}
           </Link>
         </Button>
       </div>

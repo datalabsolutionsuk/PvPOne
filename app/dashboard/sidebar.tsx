@@ -78,6 +78,7 @@ export function Sidebar({
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/dashboard/applications">Applications</NavLink>
             <NavLink href="/dashboard/applications?status=DUS">DUS</NavLink>
+            <NavLink href="/dashboard/applications?status=Certificate_Issued">PBR Certificates</NavLink>
             <NavLink href="/dashboard/tasks">Tasks</NavLink>
             <NavLink href="/dashboard/varieties">Varieties</NavLink>
             <NavLink href="/dashboard/jurisdictions">Jurisdictions</NavLink>

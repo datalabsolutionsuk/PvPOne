@@ -107,11 +107,15 @@ export async function createApplication(formData: FormData) {
 
   const jurisdictionId = formData.get("jurisdictionId") as string;
   const filingDateStr = formData.get("filingDate") as string;
-  const initialStatus = (formData.get("initialStatus") as "Draft" | "Filed" | "DUS" | undefined) || "Filed";
+  const initialStatus = (formData.get("initialStatus") as any) || "Filed";
   const dusStatus = formData.get("dusStatus") as "Waiting" | "Approved" | undefined;
   const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
+  const grantDateStr = formData.get("grantDate") as string;
+  const expiryDateStr = formData.get("expiryDate") as string;
   
   const filingDate = filingDateStr ? new Date(filingDateStr) : new Date();
+  const grantDate = grantDateStr ? new Date(grantDateStr) : undefined;
+  const expiryDate = expiryDateStr ? new Date(expiryDateStr) : undefined;
   
   // Generate Application Number: ClientName-4DigitNumber-Year
   // 1. Get Organisation Name
@@ -142,14 +146,23 @@ export async function createApplication(formData: FormData) {
       applicationNumber: generatedAppNumber,
       dusStatus: dusStatus || undefined,
       dusExpectedReceiptDate: dusExpectedDateStr ? new Date(dusExpectedDateStr) : undefined,
+      grantDate,
+      expiryDate,
     })
     .returning();
 
   // Handle DUS File Upload
   const dusFile = formData.get("dusFile") as File;
   if (dusFile && dusFile.size > 0) {
-     await saveUploadedFile(dusFile, organisationId, app.id, session.user.id);
+     await saveUploadedFile(dusFile, organisationId, app.id, session.user.id, "DUS_REPORT");
   }
+
+  // Handle Certificate Upload
+  const certificateFile = formData.get("certificateFile") as File;
+  if (certificateFile && certificateFile.size > 0) {
+     await saveUploadedFile(certificateFile, organisationId, app.id, session.user.id, "PBR_CERTIFICATE");
+  }
+
 
   // 2. Trigger Rules Engine
   await RulesEngine.generateTasksForApplication(app.id, "FILING_DATE");

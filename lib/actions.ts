@@ -10,11 +10,11 @@ import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
-async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string) {
+async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string, type: string = "DUS_REPORT") {
   try {
     if (!file || file.size === 0) return;
 
-    console.log(`Processing upload for file: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
+    console.log(`Processing upload for file: ${file.name}, Size: ${file.size}, Type: ${file.type}, DocType: ${type}`);
     
     // Check for user ID which is required by foreign key
     if (!userId) {
@@ -36,7 +36,7 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
           organisationId: orgId,
           applicationId: appId,
           name: file.name,
-          type: "DUS_REPORT",
+          type: type,
           storagePath, // Storing Data URI directly
           uploadedBy: userId || null, 
           updatedBy: userId || null,
@@ -180,13 +180,18 @@ export async function updateApplication(formData: FormData) {
     const id = formData.get("id") as string;
     const varietyId = formData.get("varietyId") as string;
     const jurisdictionId = formData.get("jurisdictionId") as string;
-    const filingDateStr = formData.get("filingDate") as string;
-    const applicationNumber = formData.get("applicationNumber") as string;
     const status = formData.get("status") as any;
     const dusStatus = formData.get("dusStatus") as any;
     const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
+    const filingDateStr = formData.get("filingDate") as string;
+    const grantDateStr = formData.get("grantDate") as string;
+    const expiryDateStr = formData.get("expiryDate") as string;
+    
     const filingDate = filingDateStr ? new Date(filingDateStr) : null;
     const dusExpectedReceiptDate = dusExpectedDateStr ? new Date(dusExpectedDateStr) : null;
+    const grantDate = grantDateStr ? new Date(grantDateStr) : null;
+    const expiryDate = expiryDateStr ? new Date(expiryDateStr) : null;
+    
     const redirectTo = formData.get("redirectTo") as string;
 
     console.log(`Updating application ${id}. Status: ${status}, DUS Status: ${dusStatus}`);
@@ -201,6 +206,8 @@ export async function updateApplication(formData: FormData) {
         status,
         dusStatus: dusStatus || undefined,
         dusExpectedReceiptDate: dusExpectedDateStr ? dusExpectedReceiptDate : undefined,
+        grantDate,
+        expiryDate,
       })
       .where(and(eq(applications.id, id), eq(applications.organisationId, session.user.organisationId)));
 
@@ -209,9 +216,15 @@ export async function updateApplication(formData: FormData) {
     const dusFile = formData.get("dusFile") as File;
     if (dusFile && dusFile.size > 0) {
         console.log("Found DUS file to upload.");
-        await saveUploadedFile(dusFile, session.user.organisationId, id, session.user.id!);
+        await saveUploadedFile(dusFile, session.user.organisationId, id, session.user.id!, "DUS_REPORT");
     } else {
         console.log("No DUS file to upload or file is empty.");
+    }
+
+    const certificateFile = formData.get("certificateFile") as File;
+    if (certificateFile && certificateFile.size > 0) {
+        console.log("Found Certificate file to upload.");
+        await saveUploadedFile(certificateFile, session.user.organisationId, id, session.user.id!, "PBR_CERTIFICATE");
     }
 
     revalidatePath("/dashboard/applications");

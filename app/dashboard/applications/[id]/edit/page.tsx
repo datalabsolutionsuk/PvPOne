@@ -52,8 +52,24 @@ export default async function EditApplicationPage({
     orderBy: [desc(documents.createdAt)]
   });
 
+  // Fetch the latest Certificate document if any
+  const latestCertDoc = await db.query.documents.findFirst({
+    where: and(
+        eq(documents.applicationId, app.id),
+        eq(documents.type, 'PBR_CERTIFICATE')
+    ),
+    orderBy: [desc(documents.createdAt)]
+  });
+
   const isDus = app.status === 'DUS';
-  const backLink = isDus ? "/dashboard/applications?status=DUS" : `/dashboard/applications/${app.id}`;
+  const isCertificate = app.status === 'Certificate_Issued';
+  
+  let backLink = `/dashboard/applications/${app.id}`;
+  if (isDus) backLink = "/dashboard/applications?status=DUS";
+  if (isCertificate) backLink = "/dashboard/applications?status=Certificate_Issued";
+
+  const titlePrefix = isDus ? "DUS Record" : isCertificate ? "Certificate" : "Application";
+  const cardTitle = isDus ? "DUS Details" : isCertificate ? "PBR Certificate Details" : "Application Details";
 
   return (
     <div className="h-full overflow-y-auto pr-2">
@@ -64,12 +80,12 @@ export default async function EditApplicationPage({
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">{isDus ? "Edit DUS Record" : "Edit Application"}</h1>
+        <h1 className="text-3xl font-bold">Edit {titlePrefix}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isDus ? "DUS Details" : "Application Details"}</CardTitle>
+          <CardTitle>{cardTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updateApplication} className="space-y-4">
@@ -121,7 +137,7 @@ export default async function EditApplicationPage({
               />
             </div>
 
-            {!isDus && (
+            {!isDus && !isCertificate && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="filingDate">Filing Date</Label>
@@ -159,6 +175,44 @@ export default async function EditApplicationPage({
             {/* Preserve filingDate if hidden */}
             {isDus && app.filingDate && (
                 <input type="hidden" name="filingDate" value={format(app.filingDate, "yyyy-MM-dd")} />
+            )}
+            {isCertificate && app.filingDate && (
+                <input type="hidden" name="filingDate" value={format(app.filingDate, "yyyy-MM-dd")} />
+            )}
+
+            {isCertificate && (
+              <>
+                 <div className="space-y-2">
+                  <Label htmlFor="grantDate">Date of Issuance</Label>
+                  <Input 
+                      type="date" 
+                      name="grantDate"
+                      defaultValue={app.grantDate ? format(app.grantDate, "yyyy-MM-dd") : ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate">Date of Expiry</Label>
+                  <Input 
+                      type="date" 
+                      name="expiryDate"
+                      defaultValue={app.expiryDate ? format(app.expiryDate, "yyyy-MM-dd") : ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="certificateFile">Upload Certificate</Label>
+                   {latestCertDoc && (
+                      <div className="text-sm text-green-600 mb-2 p-2 bg-green-50 rounded border border-green-200">
+                          Current File: <span className="font-semibold">{latestCertDoc.name}</span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                             (Uploading a new file will add to the record)
+                          </span>
+                      </div>
+                   )}
+                  <Input type="file" name="certificateFile" />
+                </div>
+              </>
             )}
 
             {isDus && (

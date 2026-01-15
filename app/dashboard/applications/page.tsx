@@ -50,6 +50,10 @@ export default async function ApplicationsPage({
     dusFilePath: string | null;
     dusFileName: string | null;
     dusFileDate: Date | null;
+    certFilePath: string | null;
+    certFileName: string | null;
+    grantDate: Date | null;
+    expiryDate: Date | null;
   }[] = [];
   
   let totalApps = 0;
@@ -104,7 +108,21 @@ export default async function ApplicationsPage({
           WHERE ${documents.applicationId} = ${applications.id} 
           AND ${documents.type} = 'DUS_REPORT'
           ORDER BY created_at DESC LIMIT 1
-        )`
+        )`,
+        certFilePath: sql<string>`(
+          SELECT storage_path FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'PBR_CERTIFICATE'
+          ORDER BY created_at DESC LIMIT 1
+        )`,
+        certFileName: sql<string>`(
+          SELECT name FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'PBR_CERTIFICATE'
+          ORDER BY created_at DESC LIMIT 1
+        )`,
+        grantDate: applications.grantDate,
+        expiryDate: applications.expiryDate
       })
       .from(applications)
       .leftJoin(varieties, eq(applications.varietyId, varieties.id))
@@ -162,6 +180,12 @@ export default async function ApplicationsPage({
                      <TableHead>Expected Receipt</TableHead>
                      <TableHead>DUS Report</TableHead>
                   </>
+                ) : searchParams.status === 'Certificate_Issued' ? (
+                  <>
+                     <TableHead>Date of Issuance</TableHead>
+                     <TableHead>Date of Expiry</TableHead>
+                     <TableHead>Certificate</TableHead>
+                  </>
                 ) : (
                   <TableHead><SortableColumn title="Status" column="status" /></TableHead>
                 )}
@@ -206,6 +230,29 @@ export default async function ApplicationsPage({
                         )}
                       </TableCell>
                     </>
+                  ) : searchParams.status === 'Certificate_Issued' ? (
+                     <>
+                        <TableCell>{app.grantDate ? format(app.grantDate, "yyyy-MM-dd") : "-"}</TableCell>
+                        <TableCell>{app.expiryDate ? format(app.expiryDate, "yyyy-MM-dd") : "-"}</TableCell>
+                        <TableCell>
+                        {app.certFilePath ? (
+                          <div className="flex flex-col gap-0.5">
+                             <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate max-w-[150px]" title={app.certFileName || ""}>
+                                  {app.certFileName}
+                                </span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" asChild>
+                                  <a href={app.certFilePath} download={app.certFileName || "certificate"}>
+                                    <Download className="h-3 w-3" />
+                                  </a>
+                                </Button>
+                             </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                        </TableCell>
+                     </>
                   ) : (
                     <TableCell>{app.status}</TableCell>
                   )}

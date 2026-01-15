@@ -184,6 +184,7 @@ export async function updateApplication(formData: FormData) {
     const dusStatus = formData.get("dusStatus") as any;
     const dusExpectedDateStr = formData.get("dusExpectedDate") as string;
     const filingDateStr = formData.get("filingDate") as string;
+    const applicationNumber = formData.get("applicationNumber") as string;
     const grantDateStr = formData.get("grantDate") as string;
     const expiryDateStr = formData.get("expiryDate") as string;
     

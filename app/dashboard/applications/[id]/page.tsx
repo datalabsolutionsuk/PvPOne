@@ -63,6 +63,11 @@ export default async function ApplicationDetailsPage({
 
   // --- Helper to show DUS Info if present ---
   const isDusRelevant = app.status === 'DUS' || app.dusStatus; 
+  const isCertificateRelevant = app.status === 'Certificate_Issued';
+
+  let backLink = "/dashboard/applications";
+  if (app.status === 'DUS') backLink = "/dashboard/applications?status=DUS";
+  if (app.status === 'Certificate_Issued') backLink = "/dashboard/applications?status=Certificate_Issued";
 
   // Fetch Deadlines
   const deadlinesConditions = [
@@ -134,14 +139,14 @@ export default async function ApplicationDetailsPage({
     <div className="h-full overflow-y-auto pr-2">
       <div className="space-y-6 pb-8">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/applications">
+          <Link href={backLink}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div className="flex-1 flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">
-              {isDusRelevant ? "DUS Details" : "Application Details"}
+              {isDusRelevant ? "DUS Details" : isCertificateRelevant ? "PBR Certificate Details" : "Application Details"}
             </h2>
             <div className="flex items-center gap-2">
               <Badge variant={app.status === "Filed" ? "default" : "secondary"}>

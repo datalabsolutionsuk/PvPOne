@@ -179,6 +179,13 @@ export async function createApplication(formData: FormData) {
   );
 
   revalidatePath("/dashboard/applications");
+  
+  if (app.status === 'DUS') {
+      redirect("/dashboard/applications?status=DUS");
+  } else if (app.status === 'Certificate_Issued') {
+      redirect("/dashboard/applications?status=Certificate_Issued");
+  }
+  
   redirect(`/dashboard/applications/${app.id}`);
 }
 

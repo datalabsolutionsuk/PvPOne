@@ -49,6 +49,7 @@ export default async function ApplicationsPage({
     updatedAt: Date | null;
     dusFilePath: string | null;
     dusFileName: string | null;
+    dusFileDate: Date | null;
   }[] = [];
   
   let totalApps = 0;
@@ -94,6 +95,12 @@ export default async function ApplicationsPage({
         )`,
         dusFileName: sql<string>`(
           SELECT name FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'DUS_REPORT'
+          ORDER BY created_at DESC LIMIT 1
+        )`,
+        dusFileDate: sql<Date>`(
+          SELECT created_at FROM ${documents} 
           WHERE ${documents.applicationId} = ${applications.id} 
           AND ${documents.type} = 'DUS_REPORT'
           ORDER BY created_at DESC LIMIT 1
@@ -153,7 +160,7 @@ export default async function ApplicationsPage({
                   <>
                      <TableHead>DUS Status</TableHead>
                      <TableHead>Expected Receipt</TableHead>
-                     <TableHead className="text-center">File</TableHead>
+                     <TableHead>DUS Report</TableHead>
                   </>
                 ) : (
                   <TableHead><SortableColumn title="Status" column="status" /></TableHead>
@@ -175,16 +182,27 @@ export default async function ApplicationsPage({
                     <>
                       <TableCell>{app.dusStatus || "-"}</TableCell>
                       <TableCell>{app.dusExpectedReceiptDate ? format(app.dusExpectedReceiptDate, "yyyy-MM-dd") : "-"}</TableCell>
-                      <TableCell className="text-center">
-                        {app.dusFilePath && (
-                          <div className="flex items-center justify-center gap-2">
-                            <Check className="h-4 w-4 text-green-600" />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" asChild>
-                              <a href={app.dusFilePath} download={app.dusFileName || "dus_report"}>
-                                <Download className="h-3 w-3" />
-                              </a>
-                            </Button>
+                      <TableCell>
+                        {app.dusFilePath ? (
+                          <div className="flex flex-col gap-0.5">
+                             <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium truncate max-w-[150px]" title={app.dusFileName || ""}>
+                                  {app.dusFileName}
+                                </span>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" asChild>
+                                  <a href={app.dusFilePath} download={app.dusFileName || "dus_report"}>
+                                    <Download className="h-3 w-3" />
+                                  </a>
+                                </Button>
+                             </div>
+                             {app.dusFileDate && (
+                               <span className="text-[11px] text-muted-foreground">
+                                 {format(app.dusFileDate, "MMM d, yyyy")}
+                               </span>
+                             )}
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                     </>

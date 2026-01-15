@@ -280,7 +280,7 @@ export default async function ApplicationsPage({
                     </TableCell>
                   )}
                   <TableCell className="text-right">
-                    {searchParams.status === 'DUS' ? (
+                    {searchParams.status === 'DUS' || searchParams.status === 'Certificate_Issued' ? (
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/applications/${app.id}/edit`}>Edit</Link>
                       </Button>

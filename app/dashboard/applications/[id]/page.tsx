@@ -62,9 +62,9 @@ export default async function ApplicationDetailsPage({
   }
 
   // --- Helper to show DUS Info if present ---
-  const isDusRelevant = app.status === 'DUS' || app.dusStatus; 
   const isCertificateRelevant = app.status === 'Certificate_Issued';
-
+  const isDusRelevant = app.status === 'DUS' || (app.dusStatus && !isCertificateRelevant);
+  
   let backLink = "/dashboard/applications";
   if (app.status === 'DUS') backLink = "/dashboard/applications?status=DUS";
   if (app.status === 'Certificate_Issued') backLink = "/dashboard/applications?status=Certificate_Issued";

@@ -52,6 +52,7 @@ export default async function ApplicationsPage({
     dusFileDate: Date | null;
     certFilePath: string | null;
     certFileName: string | null;
+    certFileCount: number;
     grantDate: Date | null;
     expiryDate: Date | null;
   }[] = [];
@@ -120,6 +121,11 @@ export default async function ApplicationsPage({
           WHERE ${documents.applicationId} = ${applications.id} 
           AND ${documents.type} = 'PBR_CERTIFICATE'
           ORDER BY created_at DESC LIMIT 1
+        )`,
+        certFileCount: sql<number>`(
+          SELECT count(*) FROM ${documents} 
+          WHERE ${documents.applicationId} = ${applications.id} 
+          AND ${documents.type} = 'PBR_CERTIFICATE'
         )`,
         grantDate: applications.grantDate,
         expiryDate: applications.expiryDate
@@ -248,7 +254,9 @@ export default async function ApplicationsPage({
                         <TableCell>{app.grantDate ? format(app.grantDate, "yyyy-MM-dd") : "-"}</TableCell>
                         <TableCell>{app.expiryDate ? format(app.expiryDate, "yyyy-MM-dd") : "-"}</TableCell>
                         <TableCell>
-                        {app.certFilePath ? (
+                        {Number(app.certFileCount) > 1 ? (
+                          <span className="text-sm font-medium">multiple files</span>
+                        ) : app.certFilePath ? (
                           <div className="flex flex-col gap-0.5">
                              <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium truncate max-w-[150px]" title={app.certFileName || ""}>

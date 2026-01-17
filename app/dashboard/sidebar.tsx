@@ -77,10 +77,12 @@ export function Sidebar({
           <nav className="flex-1 space-y-2">
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/dashboard/applications">Applications</NavLink>
-            <NavLink href="/dashboard/applications?status=DUS">DUS</NavLink>
-            <NavLink href="/dashboard/applications?status=Certificate_Issued">PBR Certificates</NavLink>
-            <NavLink href="/dashboard/tasks">Tasks</NavLink>
             <NavLink href="/dashboard/varieties">Varieties</NavLink>
+            <div className="pl-4 space-y-1">
+               <NavLink href="/dashboard/applications?status=DUS">DUS</NavLink>
+               <NavLink href="/dashboard/applications?status=Certificate_Issued">PBR Certificates</NavLink>
+            </div>
+            <NavLink href="/dashboard/tasks">Tasks</NavLink>
             <NavLink href="/dashboard/jurisdictions">Jurisdictions</NavLink>
             <NavLink href="/dashboard/documents">Documents</NavLink>
             <NavLink href="/dashboard/subscription">Subscription</NavLink>

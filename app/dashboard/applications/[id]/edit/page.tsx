@@ -43,8 +43,8 @@ export default async function EditApplicationPage({
   const allVarieties = await db.select().from(varieties);
   const allJurisdictions = await db.select().from(jurisdictions);
 
-  // Fetch the latest DUS document if any
-  const latestDusDoc = await db.query.documents.findFirst({
+  // Fetch ALL DUS documents
+  const dusDocs = await db.query.documents.findMany({
     where: and(
         eq(documents.applicationId, app.id),
         eq(documents.type, 'DUS_REPORT')
@@ -52,8 +52,8 @@ export default async function EditApplicationPage({
     orderBy: [desc(documents.createdAt)]
   });
 
-  // Fetch the latest Certificate document if any
-  const latestCertDoc = await db.query.documents.findFirst({
+  // Fetch ALL Certificate documents
+  const certDocs = await db.query.documents.findMany({
     where: and(
         eq(documents.applicationId, app.id),
         eq(documents.type, 'PBR_CERTIFICATE')
@@ -202,15 +202,24 @@ export default async function EditApplicationPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="certificateFile">Upload Certificate(s)</Label>
-                   {latestCertDoc && (
-                      <div className="text-sm text-green-600 mb-2 p-2 bg-green-50 rounded border border-green-200">
-                          Latest File: <span className="font-semibold">{latestCertDoc.name}</span>
-                          <span className="text-muted-foreground ml-2 text-xs">
-                             (You can upload additional files)
-                          </span>
+                   {certDocs.length > 0 && (
+                      <div className="mb-2 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Attached Files:</Label>
+                        <div className="max-h-40 overflow-y-auto space-y-1 p-2 bg-gray-50 rounded border">
+                           {certDocs.map((doc) => (
+                              <div key={doc.id} className="flex items-center justify-between text-sm p-1">
+                                 <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate max-w-[200px]" title={doc.name}>{doc.name}</span>
+                                    <span className="text-xs text-muted-foreground">{format(doc.createdAt, "MMM d, yyyy")}</span>
+                                 </div>
+                                 <a href={doc.storagePath} download={doc.name} className="text-blue-600 hover:underline text-xs">View</a>
+                              </div>
+                           ))}
+                        </div>
                       </div>
                    )}
                   <Input type="file" name="certificateFile" multiple />
+                  <p className="text-xs text-muted-foreground">You can select multiple files to upload.</p>
                 </div>
               </>
             )}
@@ -241,12 +250,20 @@ export default async function EditApplicationPage({
 
                 <div className="space-y-2">
                   <Label htmlFor="dusFile">Upload DUS Report/Data</Label>
-                   {latestDusDoc && (
-                      <div className="text-sm text-green-600 mb-2 p-2 bg-green-50 rounded border border-green-200">
-                          Current File: <span className="font-semibold">{latestDusDoc.name}</span>
-                          <span className="text-muted-foreground ml-2 text-xs">
-                             (Uploading a new file will add to the record)
-                          </span>
+                   {dusDocs.length > 0 && (
+                      <div className="mb-2 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Attached Files:</Label>
+                        <div className="max-h-40 overflow-y-auto space-y-1 p-2 bg-gray-50 rounded border">
+                           {dusDocs.map((doc) => (
+                              <div key={doc.id} className="flex items-center justify-between text-sm p-1">
+                                 <div className="flex items-center gap-2">
+                                    <span className="font-medium truncate max-w-[200px]" title={doc.name}>{doc.name}</span>
+                                    <span className="text-xs text-muted-foreground">{format(doc.createdAt, "MMM d, yyyy")}</span>
+                                 </div>
+                                 <a href={doc.storagePath} download={doc.name} className="text-blue-600 hover:underline text-xs">View</a>
+                              </div>
+                           ))}
+                        </div>
                       </div>
                    )}
                   <Input type="file" name="dusFile" />

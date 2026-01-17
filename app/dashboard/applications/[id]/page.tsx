@@ -36,6 +36,7 @@ export default async function ApplicationDetailsPage({
     deadlinesOrder?: string;
     documentsSort?: string;
     documentsOrder?: string;
+    from?: string;
   };
 }) {
   const deadlinesPage = searchParams.deadlinesPage ? parseInt(searchParams.deadlinesPage) : 1;
@@ -66,8 +67,12 @@ export default async function ApplicationDetailsPage({
   const isDusRelevant = app.status === 'DUS' || (app.dusStatus && !isCertificateRelevant);
   
   let backLink = "/dashboard/applications";
-  if (app.status === 'DUS') backLink = "/dashboard/applications?status=DUS";
-  if (app.status === 'Certificate_Issued') backLink = "/dashboard/applications?status=Certificate_Issued";
+  const fromAll = searchParams.from === 'all';
+
+  if (!fromAll) {
+    if (app.status === 'DUS') backLink = "/dashboard/applications?status=DUS";
+    if (app.status === 'Certificate_Issued') backLink = "/dashboard/applications?status=Certificate_Issued";
+  }
 
   // Fetch Deadlines
   const deadlinesConditions = [
@@ -146,7 +151,7 @@ export default async function ApplicationDetailsPage({
           </Link>
           <div className="flex-1 flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">
-              {isDusRelevant ? "DUS Details" : isCertificateRelevant ? "PBR Certificate Details" : "Application Details"}
+              {fromAll ? "Application Details" : isDusRelevant ? "DUS Details" : isCertificateRelevant ? "PBR Certificate Details" : "Application Details"}
             </h2>
             <div className="flex items-center gap-2">
               <Badge variant={app.status === "Filed" ? "default" : "secondary"}>

@@ -294,7 +294,7 @@ export default async function ApplicationsPage({
                       </Button>
                     ) : (
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/applications/${app.id}`}>View</Link>
+                        <Link href={`/dashboard/applications/${app.id}?from=all`}>View</Link>
                       </Button>
                     )}
                   </TableCell>

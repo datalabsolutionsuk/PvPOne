@@ -340,7 +340,9 @@ export async function completeTask(formData: FormData) {
 
 export async function updateVariety(formData: FormData) {
   const session = await auth();
-  if (!session?.user?.organisationId) {
+  const organisationId = session?.user?.organisationId;
+
+  if (!organisationId) {
     throw new Error("Unauthorized");
   }
 
@@ -360,7 +362,7 @@ export async function updateVariety(formData: FormData) {
         varietyType,
         breederReference: breederReferenceWithNames,
       })
-      .where(and(eq(varieties.id, id), eq(varieties.organisationId, session.user.organisationId)));
+      .where(and(eq(varieties.id, id), eq(varieties.organisationId, organisationId)));
 
     // Sync breeders table
     // 1. Delete existing

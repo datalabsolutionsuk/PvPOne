@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Database, Key, Table as TableIcon } from "lucide-react";
+import { ArrowLeft, Database, Key, Table as TableIcon, Info } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
@@ -37,6 +37,60 @@ erDiagram
     
     USERS ||--|{ DOCUMENTS : uploads
 `;
+
+function Legend() {
+  return (
+    <Card className="bg-slate-50/50 border-dashed">
+      <CardHeader className="py-4">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Info className="h-4 w-4 text-blue-500" />
+          Notation Key
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm pb-4">
+        <div>
+           <h4 className="font-semibold mb-3 text-xs uppercase tracking-wider text-muted-foreground border-b pb-1">Listing Notation</h4>
+           <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                 <Badge variant="outline" className="w-16 justify-center bg-white">1 → N</Badge>
+                 <div>
+                    <span className="font-medium text-slate-700 block">One-to-Many</span>
+                    <span className="text-muted-foreground text-xs leading-tight">One record in this table links to multiple records in the target table.</span>
+                 </div>
+              </div>
+              <div className="flex items-start gap-3">
+                 <Badge variant="outline" className="w-16 justify-center bg-white">N ← 1</Badge>
+                  <div>
+                    <span className="font-medium text-slate-700 block">Many-to-One</span>
+                    <span className="text-muted-foreground text-xs leading-tight">Multiple records in this table link to a single record in the target table.</span>
+                 </div>
+              </div>
+           </div>
+        </div>
+        
+        <div>
+           <h4 className="font-semibold mb-3 text-xs uppercase tracking-wider text-muted-foreground border-b pb-1">Visual Diagram Symbols</h4>
+           <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                 <div className="h-6 w-16 flex items-center justify-center bg-white border rounded text-xs font-mono">||--|&#123;</div>
+                 <div>
+                    <span className="font-medium text-slate-700 block">One-to-Many Connection</span>
+                    <span className="text-muted-foreground text-xs">A solid line ending in a "crow's foot" means one entity relates to many others.</span>
+                 </div>
+              </div>
+               <div className="flex items-center gap-3">
+                 <div className="h-6 w-16 flex items-center justify-center bg-white border rounded text-xs font-mono">||--||</div>
+                 <div>
+                    <span className="font-medium text-slate-700 block">One-to-One Connection</span>
+                    <span className="text-muted-foreground text-xs">Double vertical bars on both ends implies a unique, single connection.</span>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function Relation({ type, target, description }: RelationProps) {
   return (
@@ -94,6 +148,8 @@ export default async function RelationshipsPage() {
       </div>
 
       <div className="space-y-8">
+        
+        <Legend />
 
         {/* ER Diagram Section */}
         <section>

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements, queries, messages, varietyBreeders } from "@/db/schema";
+import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements, queries, messages, varietyBreeders, renewals } from "@/db/schema";
 import { auth, signIn } from "@/lib/auth";
 import { getCurrentOrganisationId } from "@/lib/context";
 import { AuthError } from "next-auth";
@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 import { RulesEngine } from "@/lib/rules-engine";
 import { eq, and, sql, asc, desc } from "drizzle-orm";
 
-async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string, type: string = "DUS_REPORT") {
+async function saveUploadedFile(file: File, orgId: string, appId: string, userId: string, type: string = "DUS_REPORT", renewalId?: string) {
   try {
     if (!file || file.size === 0) return;
 
@@ -35,6 +35,7 @@ async function saveUploadedFile(file: File, orgId: string, appId: string, userId
         await db.insert(documents).values({
           organisationId: orgId,
           applicationId: appId,
+          renewalId: renewalId || null,
           name: file.name,
           type: type,
           storagePath, // Storing Data URI directly

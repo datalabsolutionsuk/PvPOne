@@ -35,6 +35,14 @@ export const applicationStatusEnum = pgEnum("application_status", [
 
 export const dusStatusEnum = pgEnum("dus_status", ["Waiting", "Approved"]);
 
+export const renewalStatusEnum = pgEnum("renewal_status", [
+  "Upcoming",
+  "Due",
+  "Overdue",
+  "Paid",
+  "Completed"
+]);
+
 // --- Auth & Multi-tenancy ---
 
 export const organisations = pgTable("organisations", {
@@ -235,12 +243,28 @@ export const applications = pgTable("applications", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+export const renewals = pgTable("renewals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  applicationId: uuid("application_id")
+    .notNull()
+    .references(() => applications.id, { onDelete: "cascade" }),
+  year: integer("year").notNull(), // 1 to 25
+  dueDate: date("due_date", { mode: "date" }).notNull(),
+  status: renewalStatusEnum("status").default("Upcoming").notNull(),
+  paymentDate: date("payment_date", { mode: "date" }),
+  completedDate: date("completed_date", { mode: "date" }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+});
+
 export const documents = pgTable("documents", {
   id: uuid("id").defaultRandom().primaryKey(),
   organisationId: uuid("organisation_id")
     .notNull()
     .references(() => organisations.id, { onDelete: "cascade" }),
   applicationId: uuid("application_id").references(() => applications.id),
+  renewalId: uuid("renewal_id").references(() => renewals.id),
   taskId: uuid("task_id").references(() => tasks.id),
   name: text("name").notNull(),
   type: text("type").notNull(), // e.g., "POA", "Assignment"

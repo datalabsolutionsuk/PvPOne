@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Database, Key, Table as TableIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 interface RelationProps {
   type: "one-to-many" | "many-to-one" | "one-to-one";
@@ -46,7 +48,12 @@ function EntityCard({ name, description, children }: { name: string, description
   );
 }
 
-export default function RelationshipsPage() {
+export default async function RelationshipsPage() {
+  const session = await auth();
+  if (session?.user?.email !== "foxh1@hotmail.com") {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="h-full overflow-y-auto p-6 space-y-8">
       <div className="flex items-center gap-4 border-b pb-4">

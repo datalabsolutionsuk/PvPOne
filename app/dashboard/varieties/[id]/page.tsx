@@ -100,11 +100,12 @@ export default async function EditVarietyPage({ params }: { params: { id: string
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="breederReference">Breeder Reference</Label>
+              <Label htmlFor="breederReference">Breeder Name(s)</Label>
               <Input 
                 id="breederReference" 
                 name="breederReference" 
                 defaultValue={variety.breederReference || ""} 
+                placeholder="Separate multiple with commas"
               />
             </div>
 

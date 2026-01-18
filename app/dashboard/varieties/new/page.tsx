@@ -59,8 +59,8 @@ export default function NewVarietyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="breederReference">Breeder Reference</Label>
-              <Input id="breederReference" name="breederReference" placeholder="Internal code" />
+              <Label htmlFor="breederReference">Breeder Name(s)</Label>
+              <Input id="breederReference" name="breederReference" placeholder="e.g. John Doe, Jane Smith (separate multiple with commas)" />
             </div>
 
             <div className="flex gap-2 pt-4">

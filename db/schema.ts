@@ -202,6 +202,15 @@ export const varieties = pgTable("varieties", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 });
 
+export const varietyBreeders = pgTable("variety_breeders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  varietyId: uuid("variety_id")
+    .notNull()
+    .references(() => varieties.id, { onDelete: "cascade" }),
+  rate: integer("rate").default(100).notNull(), // Percentage share potentially? Or just ordering.
+  name: text("name").notNull(), // The Breeder Reference/Name
+});
+
 export const applications = pgTable("applications", {
   id: uuid("id").defaultRandom().primaryKey(),
   organisationId: uuid("organisation_id")

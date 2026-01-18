@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements, queries, messages } from "@/db/schema";
+import { varieties, applications, tasks, rulesets, documents, organisations, jurisdictions, ruleDocumentRequirements, queries, messages, varietyBreeders } from "@/db/schema";
 import { auth, signIn } from "@/lib/auth";
 import { getCurrentOrganisationId } from "@/lib/context";
 import { AuthError } from "next-auth";
@@ -62,15 +62,27 @@ export async function createVariety(formData: FormData) {
   const name = formData.get("name") as string;
   const species = formData.get("species") as string;
   const varietyType = formData.get("varietyType") as string;
-  const breederReference = formData.get("breederReference") as string;
+  const breederReferenceWithNames = formData.get("breederReference") as string;
 
-  await db.insert(varieties).values({
+  const [newVariety] = await db.insert(varieties).values({
     organisationId,
     name,
     species,
     varietyType,
-    breederReference,
-  });
+    breederReference: breederReferenceWithNames,
+  }).returning();
+
+  if (breederReferenceWithNames) {
+    const names = breederReferenceWithNames.split(',').map(s => s.trim()).filter(Boolean);
+    if (names.length > 0) {
+       await db.insert(varietyBreeders).values(
+         names.map(n => ({
+           varietyId: newVariety.id,
+           name: n
+         }))
+       );
+    }
+  }
 
   revalidatePath("/dashboard/varieties");
   redirect("/dashboard/varieties");
@@ -336,17 +348,37 @@ export async function updateVariety(formData: FormData) {
   const name = formData.get("name") as string;
   const species = formData.get("species") as string;
   const varietyType = formData.get("varietyType") as string;
-  const breederReference = formData.get("breederReference") as string;
+  const breederReferenceWithNames = formData.get("breederReference") as string;
 
-  await db
-    .update(varieties)
-    .set({
-      name,
-      species,
-      varietyType,
-      breederReference,
-    })
-    .where(and(eq(varieties.id, id), eq(varieties.organisationId, session.user.organisationId)));
+  await db.transaction(async (tx) => {
+    // Update main variety record
+    await tx
+      .update(varieties)
+      .set({
+        name,
+        species,
+        varietyType,
+        breederReference: breederReferenceWithNames,
+      })
+      .where(and(eq(varieties.id, id), eq(varieties.organisationId, session.user.organisationId)));
+
+    // Sync breeders table
+    // 1. Delete existing
+    await tx.delete(varietyBreeders).where(eq(varietyBreeders.varietyId, id));
+    
+    // 2. Insert new
+    if (breederReferenceWithNames) {
+      const names = breederReferenceWithNames.split(',').map(s => s.trim()).filter(Boolean);
+      if (names.length > 0) {
+         await tx.insert(varietyBreeders).values(
+           names.map(n => ({
+             varietyId: id,
+             name: n
+           }))
+         );
+      }
+    }
+  });
 
   revalidatePath("/dashboard/varieties");
   redirect("/dashboard/varieties");

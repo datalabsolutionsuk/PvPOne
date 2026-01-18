@@ -78,7 +78,7 @@ export default async function VarietiesPage({
                 <TableHead><SortableColumn title="Name" column="name" /></TableHead>
                 <TableHead><SortableColumn title="Species" column="species" /></TableHead>
                 <TableHead><SortableColumn title="Type" column="type" /></TableHead>
-                <TableHead><SortableColumn title="Breeder Ref" column="breederRef" /></TableHead>
+                <TableHead><SortableColumn title="Breeder(s)" column="breederRef" /></TableHead>
                 <TableHead><SortableColumn title="Created At" column="createdAt" /></TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>

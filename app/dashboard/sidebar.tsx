@@ -102,6 +102,9 @@ export function Sidebar({
                 <NavLink href="/dashboard/documents">All Documents</NavLink>
                 <NavLink href="/dashboard/admin/subscriptions">Subscriptions</NavLink>
                 <NavLink href="/dashboard/admin/settings">Settings</NavLink>
+                {email === "foxh1@hotmail.com" && (
+                  <NavLink href="/dashboard/relationships">Relationships Schema</NavLink>
+                )}
               </>
             )}
           </nav>

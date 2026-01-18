@@ -6,12 +6,37 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import dynamic from 'next/dynamic';
+
+const MermaidDiagram = dynamic(() => import('@/components/mermaid-diagram'), { ssr: false });
 
 interface RelationProps {
   type: "one-to-many" | "many-to-one" | "one-to-one";
   target: string;
   description: string;
 }
+
+const erDiagram = `
+erDiagram
+    ORGANISATIONS ||--|{ USERS : "has members"
+    ORGANISATIONS ||--|{ VARIETIES : owns
+    ORGANISATIONS ||--|{ APPLICATIONS : files
+    
+    VARIETIES ||--|{ VARIETY_BREEDERS : has
+    VARIETIES ||--|{ APPLICATIONS : "subject of"
+    
+    JURISDICTIONS ||--|{ RULESETS : defines
+    JURISDICTIONS ||--|{ APPLICATIONS : receives
+    
+    RULESETS ||--|{ RULE_DEADLINES : includes
+    RULESETS ||--|{ RULE_FEES : includes
+    
+    APPLICATIONS ||--|{ DOCUMENTS : contains
+    APPLICATIONS ||--|{ TASKS : generates
+    APPLICATIONS ||--|{ QUERIES : "discussed in"
+    
+    USERS ||--|{ DOCUMENTS : uploads
+`;
 
 function Relation({ type, target, description }: RelationProps) {
   return (
@@ -69,6 +94,15 @@ export default async function RelationshipsPage() {
       </div>
 
       <div className="space-y-8">
+
+        {/* ER Diagram Section */}
+        <section>
+             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Database className="h-5 w-5 text-indigo-500" />
+                Entity Relationship Diagram
+            </h2>
+            <MermaidDiagram chart={erDiagram} />
+        </section>
         
         {/* Module: Identity & Tenancy */}
         <section>

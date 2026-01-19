@@ -992,3 +992,64 @@ export async function getDashboardQueries(page: number = 1, limit: number = 5) {
   }));
 }
 
+export async function generateMaintenanceSchedule(applicationId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+  
+  const app = await db.query.applications.findFirst({
+    where: eq(applications.id, applicationId)
+  });
+  
+  if (!app || !app.grantDate) return;
+  
+  const existing = await db.select().from(renewals).where(eq(renewals.applicationId, applicationId));
+  if (existing.length > 0) return; // Already generated
+  
+  const startDate = new Date(app.grantDate);
+  const rows = [];
+  
+  for (let year = 1; year <= 25; year++) {
+     const dueDate = new Date(startDate);
+     dueDate.setFullYear(startDate.getFullYear() + year);
+     
+     rows.push({
+       applicationId,
+       year,
+       dueDate,
+       status: "Upcoming" as const
+     });
+  }
+  
+  await db.insert(renewals).values(rows);
+  revalidatePath(`/dashboard/applications/${applicationId}/maintenance`);
+}
+
+export async function updateRenewal(formData: FormData) {
+  const session = await auth();
+  const orgId = await getCurrentOrganisationId();
+  if (!session?.user?.id || !orgId) throw new Error("Unauthorized");
+
+  const renewalId = formData.get("renewalId") as string;
+  const appId = formData.get("applicationId") as string;
+  const actionType = formData.get("actionType") as string; // 'pay', 'upload'
+
+  if (actionType === 'pay') {
+    await db.update(renewals)
+      .set({ 
+        status: "Paid", 
+        paymentDate: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(renewals.id, renewalId));
+  }
+  
+  if (actionType === 'upload') {
+     const files = formData.getAll("files") as File[];
+     for (const file of files) {
+       await saveUploadedFile(file, orgId, appId, session.user.id, "RENEWAL_DOC", renewalId);
+     }
+  }
+
+  revalidatePath(`/dashboard/applications/${appId}/maintenance`);
+}
+

@@ -158,6 +158,9 @@ export default async function ApplicationDetailsPage({
                 {app.status}
               </Badge>
               <Button asChild variant="outline" size="sm">
+                <Link href={`/dashboard/applications/${app.id}/maintenance`}>Maintenance Schedule</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
                 <Link href={`/dashboard/applications/${app.id}/edit`}>Edit</Link>
               </Button>
             </div>

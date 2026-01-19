@@ -1,16 +1,14 @@
 
 import { db } from "@/lib/db";
 import { renewals, documents } from "@/db/schema";
-import { eq, asc, desc } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { ArrowLeft, CheckCircle, Upload, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle, Upload } from "lucide-react";
 import Link from "next/link";
 import { generateMaintenanceSchedule, updateRenewal } from "@/lib/actions";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export default async function MaintenancePage({ params }: { params: { id: string } }) {
   const appId = params.id;
@@ -24,7 +22,7 @@ export default async function MaintenancePage({ params }: { params: { id: string
   });
 
   const renewalDocs = await db.select().from(documents)
-    .where(eq(documents.applicationId, appId)); // We will filter by renewalId below since drizzle relations might not be fully set up for custom join queries easily without relations definition in schema
+    .where(eq(documents.applicationId, appId));
 
   return (
     <div className="h-full overflow-y-auto pr-2">
@@ -113,7 +111,9 @@ export default async function MaintenancePage({ params }: { params: { id: string
                                  name="files" 
                                  multiple 
                                  className="hidden" 
-                                 onChange={(e) => e.target.form?.requestSubmit()}
+                                 onChange={(e) => {
+                                   if (e.target.form) e.target.form.requestSubmit()
+                                 }}
                                />
                              </div>
                          </form>

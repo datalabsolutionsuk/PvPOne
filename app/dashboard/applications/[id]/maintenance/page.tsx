@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/db";
-import { renewals, documents } from "@/db/schema";
+import { renewals, documents, applications } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,18 +8,41 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ArrowLeft, CheckCircle, Upload } from "lucide-react";
 import Link from "next/link";
-import { generateMaintenanceSchedule, updateRenewal } from "@/lib/actions";
+import { updateRenewal } from "@/lib/actions";
 
 export default async function MaintenancePage({ params }: { params: { id: string } }) {
   const appId = params.id;
   
-  // Ensure schedule exists
-  try {
-    await generateMaintenanceSchedule(appId);
-  } catch (error) {
-    console.error("Error generating maintenance schedule:", error);
+  // 1. Check if schedule exists (read-only check first)
+  const existingSchedule = await db.select().from(renewals)
+    .where(eq(renewals.applicationId, appId))
+    .limit(1);
+
+  // 2. If missing, generate it (Inline logic to avoid Server Action overhead during render)
+  if (existingSchedule.length === 0) {
+      const appRes = await db.select().from(applications).where(eq(applications.id, appId)).limit(1);
+      const app = appRes[0];
+      
+      if (app && app.grantDate) {
+          const startDate = new Date(app.grantDate);
+          const rows = [];
+          
+          for (let year = 1; year <= 25; year++) {
+             const dueDate = new Date(startDate);
+             dueDate.setFullYear(startDate.getFullYear() + year);
+             
+             rows.push({
+               applicationId: appId,
+               year,
+               dueDate,
+               status: "Upcoming" as const
+             });
+          }
+          await db.insert(renewals).values(rows);
+      }
   }
   
+  // 3. Fetch full schedule
   const schedule = await db.select().from(renewals)
     .where(eq(renewals.applicationId, appId))
     .orderBy(asc(renewals.year));

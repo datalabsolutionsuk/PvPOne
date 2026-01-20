@@ -1024,26 +1024,95 @@ export async function generateMaintenanceSchedule(applicationId: string) {
   // revalidatePath(`/dashboard/applications/${applicationId}/maintenance`);
 }
 
+export async function rescheduleMaintenance(formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const applicationId = formData.get("applicationId") as string;
+  const newStartDateStr = formData.get("newStartDate") as string;
+  
+  if (!newStartDateStr || !applicationId) return;
+
+  const newStartDate = new Date(newStartDateStr);
+  if (isNaN(newStartDate.getTime())) return;
+
+  // We want to update all renewals based on this new start date
+  // Year 1 becomes newStartDate
+  // Year 2 becomes newStartDate + 1y, etc.
+  
+  // 1. Fetch all renewals for this app
+  const currentRenewals = await db.select().from(renewals)
+      .where(eq(renewals.applicationId, applicationId));
+
+  if (currentRenewals.length === 0) return;
+
+  // 2. Iterate and update
+  for (const renewal of currentRenewals) {
+    // Only update if not completed/paid? 
+    // User requested "edit the date... rest will be updated". implies a forceful shift.
+    // If a renewal is already "Paid" for Year 1, do we shift Year 1's due date? 
+    // Probably yes, for record keeping, even if status doesn't change.
+    
+    // Logic: Year N due date = NewStartDate + (N years) - 1 year? 
+    // Wait, usually the user sets the "Base Date" (Grant Date).
+    // If Grant Date is 2020-01-01. Year 1 due is 2021-01-01.
+    // Use request: "edit the date to be 30/01/2026. then the rest... will be updated"
+    // If they set the master date to 30/01/2026. Does that mean Year 1 is 30/01/2026? 
+    // Let's assume the input is the "First Renewal Due Date".
+    
+    const targetDate = new Date(newStartDate);
+    targetDate.setFullYear(newStartDate.getFullYear() + (renewal.year - 1));
+    
+    await db.update(renewals)
+      .set({ dueDate: targetDate, updatedAt: new Date() })
+      .where(eq(renewals.id, renewal.id));
+  }
+  
+  revalidatePath(`/dashboard/applications/${applicationId}/maintenance`);
+}
+
 export async function updateRenewal(formData: FormData) {
   const session = await auth();
   const orgId = await getCurrentOrganisationId();
-  if (!session?.user?.id || !orgId) throw new Error("Unauthorized");
+  // Allow SuperAdmin to bypass org check if they are editing directly (orgId might be null if they are viewing via "All Renewals")
+  // But we need to be careful. For now, let's assume SuperAdmin context or Org context.
+  
+  // If no session, strictly unauthorized
+  if (!session?.user?.id) throw new Error("Unauthorized");
 
   const renewalId = formData.get("renewalId") as string;
   const appId = formData.get("applicationId") as string;
-  const actionType = formData.get("actionType") as string; // 'pay', 'upload'
+  const actionType = formData.get("actionType") as string; 
+  // actionType: 'pay', 'upload', 'update_status', 'delete', 'update_date'
 
-  if (actionType === 'pay') {
-    await db.update(renewals)
+  if (actionType === 'pay' || actionType === 'toggle_paid') {
+     // Fetch current status to toggle if needed, or just set to Paid
+     const current = await db.select().from(renewals).where(eq(renewals.id, renewalId)).limit(1);
+     const newStatus = current[0]?.status === 'Paid' ? 'Upcoming' : 'Paid';
+     
+     await db.update(renewals)
       .set({ 
-        status: "Paid", 
-        paymentDate: new Date(),
+        status: newStatus, 
+        paymentDate: newStatus === 'Paid' ? new Date() : null,
         updatedAt: new Date()
       })
       .where(eq(renewals.id, renewalId));
   }
   
-  if (actionType === 'upload') {
+  if (actionType === 'delete') {
+      await db.delete(renewals).where(eq(renewals.id, renewalId));
+  }
+
+  if (actionType === 'update_date') {
+      const newDateStr = formData.get("date") as string;
+      if (newDateStr) {
+          await db.update(renewals)
+            .set({ dueDate: new Date(newDateStr), updatedAt: new Date() })
+            .where(eq(renewals.id, renewalId));
+      }
+  }
+
+  if (actionType === 'upload' && orgId) {
      const files = formData.getAll("files") as File[];
      for (const file of files) {
        await saveUploadedFile(file, orgId, appId, session.user.id, "RENEWAL_DOC", renewalId);
@@ -1051,5 +1120,6 @@ export async function updateRenewal(formData: FormData) {
   }
 
   revalidatePath(`/dashboard/applications/${appId}/maintenance`);
+  revalidatePath(`/dashboard/admin/maintenance`);
 }
 

@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { RenewalActions } from "./renewal-actions";
+import { MaintenanceScheduler } from "./scheduler";
 
 export default async function MaintenancePage({ params }: { params: { id: string } }) {
   const appId = params.id;
@@ -64,6 +65,14 @@ export default async function MaintenancePage({ params }: { params: { id: string
               <p className="text-muted-foreground">Manage annual renewals (Year 1 - 25)</p>
           </div>
         </div>
+
+        {/* Date Rescheduler */}
+        {schedule.length > 0 && (
+             <MaintenanceScheduler 
+                applicationId={appId} 
+                initialDate={schedule.find(s => s.year === 1)?.dueDate || undefined} 
+             />
+        )}
 
         <div className="grid gap-4">
           {schedule.map((term) => {

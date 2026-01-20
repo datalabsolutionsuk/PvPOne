@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AdminRenewalActions } from "./admin-actions";
 
 export default async function AdminMaintenancePage({
     searchParams,
@@ -51,7 +52,7 @@ export default async function AdminMaintenancePage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-           <h1 className="text-3xl font-bold tracking-tight">All Renewals</h1>
+           <h1 className="text-3xl font-bold tracking-tight">Master Maintenance</h1>
            <p className="text-muted-foreground">Global Maintenance Schedule for {currentYear}</p>
         </div>
       </div>
@@ -87,9 +88,17 @@ export default async function AdminMaintenancePage({
                      </Badge>
                    </TableCell>
                    <TableCell className="text-right">
-                      <Link href={`/dashboard/applications/${r.appId}/maintenance`} className="text-blue-600 hover:underline">
-                         View
-                      </Link>
+                      <div className="flex justify-end items-center gap-4">
+                        <Link href={`/dashboard/applications/${r.appId}/maintenance`} className="text-blue-600 hover:underline text-sm">
+                           View App
+                        </Link>
+                        <AdminRenewalActions 
+                           renewalId={r.id} 
+                           applicationId={r.appId} 
+                           status={r.status}
+                           dueDate={r.dueDate}
+                        />
+                      </div>
                    </TableCell>
                  </TableRow>
                ))}

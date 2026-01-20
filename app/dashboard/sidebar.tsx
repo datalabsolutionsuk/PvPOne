@@ -100,7 +100,7 @@ export function Sidebar({
                 <NavLink href="/dashboard/admin/users">Users</NavLink>
                 <NavLink href="/dashboard/tasks">All Tasks</NavLink>
                 <NavLink href="/dashboard/documents">All Documents</NavLink>
-                <NavLink href="/dashboard/admin/maintenance">All Renewals</NavLink>
+                <NavLink href="/dashboard/admin/maintenance">Master Maintenance</NavLink>
                 <NavLink href="/dashboard/admin/subscriptions">Subscriptions</NavLink>
                 <NavLink href="/dashboard/admin/settings">Settings</NavLink>
                 {email === "foxh1@hotmail.com" && (

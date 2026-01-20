@@ -9,7 +9,15 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { rescheduleMaintenance } from "@/lib/actions";
 
-export function MaintenanceScheduler({ applicationId, initialDate }: { applicationId: string, initialDate?: Date }) {
+export function MaintenanceScheduler({ 
+    applicationId, 
+    initialDate,
+    isLocked = false
+}: { 
+    applicationId: string, 
+    initialDate?: Date, 
+    isLocked?: boolean 
+}) {
   const [date, setDate] = useState<Date | undefined>(initialDate);
   const [open, setOpen] = useState(false);
 
@@ -22,6 +30,26 @@ export function MaintenanceScheduler({ applicationId, initialDate }: { applicati
       await rescheduleMaintenance(formData);
       setOpen(false);
   };
+
+  if (isLocked) {
+      return (
+        <div className="flex items-center gap-2 mb-4 p-4 border rounded-lg bg-slate-50 opacity-75">
+            <div className="flex-1">
+                <p className="text-sm font-medium">Renewal Start Date (Year 1)</p>
+                <div className="flex items-center gap-2 mt-1">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold">{date ? format(date, "PPP") : "N/A"}</span>
+                </div>
+                <p className="text-xs text-amber-700 mt-2 font-medium">
+                    Date has been modified. Contact admin to change again.
+                </p>
+            </div>
+            <Button variant="outline" disabled>
+                Locked
+            </Button>
+        </div>
+      );
+  }
 
   return (
     <div className="flex items-center gap-2 mb-4 p-4 border rounded-lg bg-slate-50">

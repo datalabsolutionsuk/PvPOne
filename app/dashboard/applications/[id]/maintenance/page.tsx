@@ -51,6 +51,29 @@ export default async function MaintenancePage({ params }: { params: { id: string
   const renewalDocs = await db.select().from(documents)
     .where(eq(documents.applicationId, appId));
 
+  // Determine if schedule is locked (i.e. has been customized from default)
+  const app = await db.query.applications.findFirst({
+      where: eq(applications.id, appId)
+  });
+  
+  let isLocked = false;
+  
+  if (app && app.grantDate && schedule.length > 0) {
+      const defaultYear1 = new Date(app.grantDate);
+      defaultYear1.setFullYear(defaultYear1.getFullYear() + 1);
+      
+      const currentYear1 = schedule.find(s => s.year === 1)?.dueDate;
+      
+      // If dates differ by more than 24 hours (to handle minortimezone stuff), consider it changed
+      if (currentYear1) {
+          const diffTime = Math.abs(currentYear1.getTime() - defaultYear1.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+          if (diffDays > 1) {
+              isLocked = true;
+          }
+      }
+  }
+
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="space-y-6 pb-8">
@@ -71,6 +94,7 @@ export default async function MaintenancePage({ params }: { params: { id: string
              <MaintenanceScheduler 
                 applicationId={appId} 
                 initialDate={schedule.find(s => s.year === 1)?.dueDate || undefined} 
+                isLocked={isLocked}
              />
         )}
 

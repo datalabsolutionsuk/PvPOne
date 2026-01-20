@@ -1021,7 +1021,7 @@ export async function generateMaintenanceSchedule(applicationId: string) {
   }
   
   await db.insert(renewals).values(rows);
-  revalidatePath(`/dashboard/applications/${applicationId}/maintenance`);
+  // revalidatePath(`/dashboard/applications/${applicationId}/maintenance`);
 }
 
 export async function updateRenewal(formData: FormData) {

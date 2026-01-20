@@ -14,12 +14,15 @@ export default async function MaintenancePage({ params }: { params: { id: string
   const appId = params.id;
   
   // Ensure schedule exists
-  await generateMaintenanceSchedule(appId);
+  try {
+    await generateMaintenanceSchedule(appId);
+  } catch (error) {
+    console.error("Error generating maintenance schedule:", error);
+  }
   
-  const schedule = await db.query.renewals.findMany({
-    where: eq(renewals.applicationId, appId),
-    orderBy: [asc(renewals.year)],
-  });
+  const schedule = await db.select().from(renewals)
+    .where(eq(renewals.applicationId, appId))
+    .orderBy(asc(renewals.year));
 
   const renewalDocs = await db.select().from(documents)
     .where(eq(documents.applicationId, appId));

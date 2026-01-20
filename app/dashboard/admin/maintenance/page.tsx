@@ -92,12 +92,14 @@ export default async function AdminMaintenancePage({
                         <Link href={`/dashboard/applications/${r.appId}/maintenance`} className="text-blue-600 hover:underline text-sm">
                            View App
                         </Link>
-                        <AdminRenewalActions 
-                           renewalId={r.id} 
-                           applicationId={r.appId} 
-                           status={r.status}
-                           dueDate={r.dueDate}
-                        />
+                        {r.appId && (
+                            <AdminRenewalActions 
+                               renewalId={r.id} 
+                               applicationId={r.appId} 
+                               status={r.status}
+                               dueDate={r.dueDate}
+                            />
+                        )}
                       </div>
                    </TableCell>
                  </TableRow>

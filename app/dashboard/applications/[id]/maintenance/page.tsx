@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { ArrowLeft, CheckCircle, Upload } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { updateRenewal } from "@/lib/actions";
+import { RenewalActions } from "./renewal-actions";
 
 export default async function MaintenancePage({ params }: { params: { id: string } }) {
   const appId = params.id;
@@ -109,41 +109,11 @@ export default async function MaintenancePage({ params }: { params: { id: string
                        )}
 
                        {/* Actions */}
-                       <div className="flex gap-2">
-                         {term.status !== "Paid" && (
-                           <form action={updateRenewal}>
-                             <input type="hidden" name="renewalId" value={term.id} />
-                             <input type="hidden" name="applicationId" value={appId} />
-                             <input type="hidden" name="actionType" value="pay" />
-                             <Button size="sm" variant="outline" className="w-full gap-2">
-                               <CheckCircle className="h-3 w-3" />
-                               Mark Paid
-                             </Button>
-                           </form>
-                         )}
-                         
-                         <form action={updateRenewal} className="flex-1">
-                             <input type="hidden" name="renewalId" value={term.id} />
-                             <input type="hidden" name="applicationId" value={appId} />
-                             <input type="hidden" name="actionType" value="upload" />
-                             <div className="flex items-center gap-2">
-                               <label htmlFor={`upload-${term.id}`} className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 px-3 w-full">
-                                  <Upload className="h-3 w-3 mr-2" />
-                                  Upload Doc
-                               </label>
-                               <input 
-                                 id={`upload-${term.id}`}
-                                 type="file" 
-                                 name="files" 
-                                 multiple 
-                                 className="hidden" 
-                                 onChange={(e) => {
-                                   if (e.target.form) e.target.form.requestSubmit()
-                                 }}
-                               />
-                             </div>
-                         </form>
-                       </div>
+                       <RenewalActions 
+                          renewalId={term.id} 
+                          applicationId={appId} 
+                          status={term.status} 
+                       />
                      </div>
                    </div>
                  </CardContent>

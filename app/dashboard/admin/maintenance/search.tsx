@@ -21,7 +21,7 @@ export function MaintenanceSearch() {
   }, 300);
 
   return (
-    <div className="relative flex flex-1 flex-shrink-0">
+    <div className="relative">
       <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
       <Input
         className="pl-9 w-[300px]"

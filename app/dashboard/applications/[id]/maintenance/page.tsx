@@ -53,7 +53,8 @@ export default async function MaintenancePage({ params }: { params: { id: string
 
   // Determine if schedule is locked (i.e. has been customized from default)
   const app = await db.query.applications.findFirst({
-      where: eq(applications.id, appId)
+      where: eq(applications.id, appId),
+      with: { variety: true }
   });
   
   let isLocked = false;
@@ -95,6 +96,7 @@ export default async function MaintenancePage({ params }: { params: { id: string
                 applicationId={appId} 
                 initialDate={schedule.find(s => s.year === 1)?.dueDate || undefined} 
                 isLocked={isLocked}
+                varietyName={app?.variety.name || "Unknown Variety"}
              />
         )}
 

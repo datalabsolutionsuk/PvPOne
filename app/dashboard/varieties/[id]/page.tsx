@@ -12,7 +12,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
-export default async function EditVarietyPage({ params }: { params: { id: string } }) {
+export default async function EditVarietyPage({ 
+  params,
+  searchParams 
+}: { 
+  params: { id: string },
+  searchParams: { from?: string }
+}) {
   const organisationId = await getCurrentOrganisationId();
   const isSuper = await isSuperAdmin();
   
@@ -23,7 +29,8 @@ export default async function EditVarietyPage({ params }: { params: { id: string
   let variety;
   try {
     const conditions = [eq(varieties.id, params.id)];
-    if (organisationId) {
+    // If not super admin, strictly enforce organisation ownership
+    if (organisationId && !isSuper) {
       conditions.push(eq(varieties.organisationId, organisationId));
     }
 
@@ -42,11 +49,13 @@ export default async function EditVarietyPage({ params }: { params: { id: string
     notFound();
   }
 
+  const backLink = searchParams.from === 'admin_varieties' ? "/dashboard/admin/varieties" : "/dashboard/varieties";
+
   return (
     <div className="h-full overflow-y-auto pr-2">
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <div className="flex items-center gap-4">
-        <Link href="/dashboard/varieties">
+        <Link href={backLink}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -113,7 +122,7 @@ export default async function EditVarietyPage({ params }: { params: { id: string
               <Button type="submit" className="flex-1">
                 Save Changes
               </Button>
-              <Link href="/dashboard/varieties" className="flex-1">
+              <Link href={backLink} className="flex-1">
                 <Button variant="outline" type="button" className="w-full">
                   Cancel
                 </Button>

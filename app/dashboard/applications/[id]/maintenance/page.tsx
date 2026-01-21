@@ -11,10 +11,19 @@ import Link from "next/link";
 import { RenewalActions } from "./renewal-actions";
 import { MaintenanceScheduler } from "./scheduler";
 
-export default async function MaintenancePage({ params }: { params: { id: string } }) {
+export default async function MaintenancePage({ 
+    params,
+    searchParams 
+}: { 
+    params: { id: string },
+    searchParams: { from?: string }
+}) {
   const appId = params.id;
   
-  // 1. Check if schedule exists (read-only check first)
+  let backLink = `/dashboard/applications/${appId}`;
+  if (searchParams.from === 'admin_maintenance') {
+      backLink = '/dashboard/admin/maintenance';
+  }
   const existingSchedule = await db.select().from(renewals)
     .where(eq(renewals.applicationId, appId))
     .limit(1);
@@ -79,7 +88,7 @@ export default async function MaintenancePage({ params }: { params: { id: string
     <div className="h-full overflow-y-auto pr-2">
       <div className="space-y-6 pb-8">
         <div className="flex items-center gap-4 border-b pb-4">
-          <Link href={`/dashboard/applications/${appId}`}>
+          <Link href={backLink}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>

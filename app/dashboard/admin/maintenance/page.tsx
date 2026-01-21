@@ -112,7 +112,7 @@ export default async function AdminMaintenancePage({
                    </TableCell>
                    <TableCell className="text-right">
                       <div className="flex justify-end items-center gap-4">
-                        <Link href={`/dashboard/applications/${r.appId}/maintenance`} className="text-blue-600 hover:underline text-sm">
+                        <Link href={`/dashboard/applications/${r.appId}/maintenance?from=admin_maintenance`} className="text-blue-600 hover:underline text-sm">
                            View App
                         </Link>
                         {r.appId && (

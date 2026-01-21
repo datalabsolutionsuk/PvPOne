@@ -88,7 +88,7 @@ export default async function AdminApplicationsPage({
                 {statusFilter === 'DUS' && <TableCell>{app.dusStatus}</TableCell>}
                 <TableCell>{app.filingDate ? format(app.filingDate, "PP") : "-"}</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/dashboard/applications/${app.id}`} className="text-blue-600 hover:underline">
+                  <Link href={`/dashboard/applications/${app.id}?from=admin_applications&status=${statusFilter || ''}`} className="text-blue-600 hover:underline">
                     View
                   </Link>
                 </TableCell>

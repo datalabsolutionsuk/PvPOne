@@ -68,7 +68,7 @@ export default async function AdminVarietiesPage({
                 <TableCell>{variety.orgName}</TableCell>
                 <TableCell>{format(variety.createdAt, "PP")}</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/dashboard/varieties/${variety.id}`} className="text-blue-600 hover:underline">
+                  <Link href={`/dashboard/varieties/${variety.id}?from=admin_varieties`} className="text-blue-600 hover:underline">
                     View
                   </Link>
                 </TableCell>

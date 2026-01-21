@@ -68,8 +68,15 @@ export default async function ApplicationDetailsPage({
   
   let backLink = "/dashboard/applications";
   const fromAll = searchParams.from === 'all';
+  const fromAdminApp = searchParams.from === 'admin_applications';
 
-  if (!fromAll) {
+  if (fromAdminApp) {
+    backLink = "/dashboard/admin/applications";
+    // If specific status was passed in filter, try to respect it, or just use app status
+    const statusParam = searchParams.status || app.status;
+    if (statusParam === 'DUS') backLink = "/dashboard/admin/applications?status=DUS";
+    if (statusParam === 'Certificate_Issued') backLink = "/dashboard/admin/applications?status=Certificate_Issued";
+  } else if (!fromAll) {
     if (app.status === 'DUS') backLink = "/dashboard/applications?status=DUS";
     if (app.status === 'Certificate_Issued') backLink = "/dashboard/applications?status=Certificate_Issued";
   }

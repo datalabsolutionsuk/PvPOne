@@ -98,6 +98,9 @@ export function Sidebar({
                 </div>
                 <NavLink href="/dashboard/admin/organisations">Organisations</NavLink>
                 <NavLink href="/dashboard/admin/users">Users</NavLink>
+                <NavLink href="/dashboard/admin/varieties">All Varieties</NavLink>
+                <NavLink href="/dashboard/admin/applications?status=DUS">All DUS</NavLink>
+                <NavLink href="/dashboard/admin/applications?status=Certificate_Issued">All BBR</NavLink>
                 <NavLink href="/dashboard/tasks">All Tasks</NavLink>
                 <NavLink href="/dashboard/documents">All Documents</NavLink>
                 <NavLink href="/dashboard/admin/maintenance">Master Maintenance</NavLink>

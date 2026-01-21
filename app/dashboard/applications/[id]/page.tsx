@@ -37,6 +37,7 @@ export default async function ApplicationDetailsPage({
     documentsSort?: string;
     documentsOrder?: string;
     from?: string;
+    status?: string;
   };
 }) {
   const deadlinesPage = searchParams.deadlinesPage ? parseInt(searchParams.deadlinesPage) : 1;

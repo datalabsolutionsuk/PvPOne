@@ -1,7 +1,7 @@
 
 import { db } from "@/lib/db";
 import { renewals, applications, organisations, varieties, jurisdictions } from "@/db/schema";
-import { eq, asc, and, gte, lte } from "drizzle-orm";
+import { eq, asc, and, gte, lte, or, ilike } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -15,14 +15,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminRenewalActions } from "./admin-actions";
+import { MaintenanceSearch } from "./search";
+import { auth } from "@/lib/auth";
 
 export default async function AdminMaintenancePage({
     searchParams,
 }: {
-    searchParams: { year?: string; status?: string }
+    searchParams: { year?: string; status?: string; query?: string }
 }) {
+  const session = await auth();
   const currentYear = searchParams.year ? parseInt(searchParams.year) : new Date().getFullYear();
+  const query = searchParams.query || "";
   
+  // Base conditions: Year range
+  const conditions = [
+     gte(renewals.dueDate, new Date(`${currentYear}-01-01`)),
+     lte(renewals.dueDate, new Date(`${currentYear}-12-31`))
+  ];
+
+  // Search logic: If searching by ID, ignore year filter to find it anywhere
+  if (query) {
+     // Check if query looks like a UUID for exact match, otherwise fuzzy search name
+     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query);
+     if (isUuid) {
+        // Find exact app ID match - clear date filters to find the record regardless of year
+        // Actually, we usually want to edit Year 1 to reschedule.
+        // But this view shows *Renewals*.
+        // If searching by App ID, show ALL renewals for that app? Or just the current year's?
+        // Let's show ALL for that app if searching by ID, it's more useful for "tracking".
+        conditions.length = 0; // Clear strict year filter
+        conditions.push(eq(applications.id, query));
+     } else {
+        conditions.push(ilike(varieties.name, `%${query}%`));
+     }
+  }
+
   // Fetch all upcoming renewals for the year across ALL organisations
   // Note: In a real "admin" view, we want to see everything
   const allRenewals = await db.select({
@@ -40,12 +67,7 @@ export default async function AdminMaintenancePage({
   .leftJoin(varieties, eq(applications.varietyId, varieties.id))
   .leftJoin(organisations, eq(applications.organisationId, organisations.id))
   .leftJoin(jurisdictions, eq(applications.jurisdictionId, jurisdictions.id))
-  .where(
-      and(
-          gte(renewals.dueDate, new Date(`${currentYear}-01-01`)),
-          lte(renewals.dueDate, new Date(`${currentYear}-12-31`))
-      )
-  )
+  .where(and(...conditions))
   .orderBy(asc(renewals.dueDate));
 
   return (
@@ -53,8 +75,9 @@ export default async function AdminMaintenancePage({
       <div className="flex items-center justify-between">
         <div>
            <h1 className="text-3xl font-bold tracking-tight">Master Maintenance</h1>
-           <p className="text-muted-foreground">Global Maintenance Schedule for {currentYear}</p>
+           <p className="text-muted-foreground">{query ? `Search results for "${query}"` : `Global Maintenance Schedule for ${currentYear}`}</p>
         </div>
+        <MaintenanceSearch />
       </div>
 
       <Card>

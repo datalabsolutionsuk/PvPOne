@@ -43,9 +43,13 @@ export default async function TasksPage({
 
   let taskList: any[] = [];
   try {
-    const conditions = [
-      ne(tasks.type, "DOCUMENT")
-    ];
+    const conditions: SQL<unknown>[] = [];
+
+    // By default exclude documents, UNLESS we are in "upcoming" view which shows everything pending
+    // OR we are specifically looking at "documents" view
+    if (searchParams.filter !== "upcoming" && searchParams.filter !== "documents") {
+        conditions.push(ne(tasks.type, "DOCUMENT"));
+    }
     
     // Only filter by organisation if:
     // 1. User is NOT a super admin (must see their own org)
@@ -59,6 +63,13 @@ export default async function TasksPage({
       conditions.push(eq(tasks.status, "PENDING"));
     } else if (searchParams.filter === "pending") {
       conditions.push(eq(tasks.status, "PENDING"));
+    } else if (searchParams.filter === "documents") {
+      conditions.push(
+        and(
+          eq(tasks.status, "PENDING"),
+          eq(tasks.type, "DOCUMENT")
+        ) as SQL<unknown>
+      );
     } else if (searchParams.filter === "upcoming") {
       const next90Days = new Date();
       next90Days.setDate(next90Days.getDate() + 90);
@@ -66,7 +77,6 @@ export default async function TasksPage({
       conditions.push(
         and(
           eq(tasks.status, "PENDING"),
-          gte(tasks.dueDate, new Date()),
           lte(tasks.dueDate, next90Days)
         ) as SQL<unknown>
       );
@@ -131,6 +141,7 @@ export default async function TasksPage({
   let pageTitle = "All Tasks";
   if (searchParams.filter === "urgent") pageTitle = "Urgent Tasks";
   if (searchParams.filter === "pending") pageTitle = "Pending Tasks";
+  if (searchParams.filter === "documents") pageTitle = "Required Documents";
   if (searchParams.filter === "upcoming") pageTitle = "Upcoming Deadlines";
 
   return (
@@ -191,7 +202,7 @@ export default async function TasksPage({
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/applications/${task.applicationId}`}>View</Link>
+                      <Link href={`/dashboard/tasks/${task.id}`}>View</Link>
                     </Button>
                   </TableCell>
                 </TableRow>

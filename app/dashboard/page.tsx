@@ -62,7 +62,6 @@ export default async function DashboardPage({
 
     const deadlinesConditions = [
       eq(tasks.status, "PENDING"),
-      gte(tasks.dueDate, new Date()),
       lte(tasks.dueDate, next90Days)
     ];
     if (organisationId) {
@@ -324,7 +323,7 @@ export default async function DashboardPage({
         
         <Card className="border-none shadow-sm flex flex-col h-full overflow-hidden">
           <CardHeader className="flex-shrink-0">
-            <CardTitle>Upcoming Deadlines (30 days)</CardTitle>
+            <CardTitle>Upcoming Deadlines (90 days)</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
@@ -396,7 +395,7 @@ export default async function DashboardPage({
                   <p className="text-yellow-800 text-sm mb-3">
                     Review your filed applications to ensure all required documents are uploaded before deadlines.
                   </p>
-                  <Link href="/dashboard/tasks?filter=pending" className="text-yellow-900 font-medium text-sm flex items-center hover:underline">
+                  <Link href="/dashboard/tasks?filter=documents" className="text-yellow-900 font-medium text-sm flex items-center hover:underline">
                     View applications <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </div>

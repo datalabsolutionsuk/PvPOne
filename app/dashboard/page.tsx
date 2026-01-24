@@ -108,9 +108,10 @@ export default async function DashboardPage({
     const varietiesCount = await varietiesQuery;
     totalVarieties = Number(varietiesCount[0].count);
 
-    // 4. Pending Tasks Count
+    // 4. Pending Documents (labeled as Missing Documents)
     const pendingTasksConditions = [
-      eq(tasks.status, "PENDING")
+      eq(tasks.status, "PENDING"),
+      eq(tasks.type, "DOCUMENT")
     ];
     if (organisationId) {
       pendingTasksConditions.push(eq(applications.organisationId, organisationId));
@@ -210,7 +211,7 @@ export default async function DashboardPage({
             </Card>
           </Link>
           
-          <Link href="/dashboard/tasks" className="block">
+          <Link href="/dashboard/tasks?filter=upcoming" className="block">
             <Card className="hover:shadow-md transition-all cursor-pointer h-full border-none shadow-sm">
               <CardContent className="p-6 flex justify-between items-start">
                 <div>
@@ -224,7 +225,7 @@ export default async function DashboardPage({
             </Card>
           </Link>
 
-          <Link href="/dashboard/tasks?filter=pending" className="block">
+          <Link href="/dashboard/documents" className="block">
             <Card className="hover:shadow-md transition-all cursor-pointer h-full border-none shadow-sm">
               <CardContent className="p-6 flex justify-between items-start">
                 <div>
@@ -242,7 +243,7 @@ export default async function DashboardPage({
             <Card className="hover:shadow-md transition-all cursor-pointer h-full border-none shadow-sm">
               <CardContent className="p-6 flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Active Cases</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Varieties</p>
                   <div className="text-3xl font-bold">{totalVarieties}</div>
                 </div>
                 <div className="p-2 bg-green-50 rounded-lg">

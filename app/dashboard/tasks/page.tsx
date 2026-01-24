@@ -59,6 +59,13 @@ export default async function TasksPage({
       conditions.push(eq(tasks.status, "PENDING"));
     } else if (searchParams.filter === "pending") {
       conditions.push(eq(tasks.status, "PENDING"));
+    } else if (searchParams.filter === "upcoming") {
+      conditions.push(
+        and(
+          eq(tasks.status, "PENDING"),
+          gte(tasks.dueDate, new Date())
+        )
+      );
     }
 
     if (queryText) {

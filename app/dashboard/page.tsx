@@ -4,7 +4,7 @@ import { sql, eq, and, gte, asc, desc } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import Link from "next/link";
-import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { FileText, Calendar, AlertCircle, TrendingUp, ArrowRight, ChevronLeft, ChevronRight, MessageSquare, ClipboardCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
@@ -35,6 +35,7 @@ export default async function DashboardPage({
   let pendingTasksCount = 0;
   let totalDeadlines = 0;
   let totalQueries = 0;
+  let totalTasks = 0;
 
   // Helper to apply org filter if present
   const orgFilter = (table: any) => organisationId ? eq(table.organisationId, organisationId) : undefined;
@@ -137,6 +138,19 @@ export default async function DashboardPage({
       .where(and(...queriesConditions));
     totalQueries = Number(queriesCountRes[0].count);
 
+    // 6. Total Tasks Count (All statuses)
+    const totalTasksConditions = [];
+    if (organisationId) {
+      totalTasksConditions.push(eq(applications.organisationId, organisationId));
+    }
+
+    const totalTasksCountRes = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tasks)
+      .innerJoin(applications, eq(tasks.applicationId, applications.id))
+      .where(and(...totalTasksConditions));
+    totalTasks = Number(totalTasksCountRes[0].count);
+
     recentQueries = await db
       .select({
         query: queries,
@@ -197,15 +211,15 @@ export default async function DashboardPage({
         </div>
       
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Link href="/dashboard/applications" className="block">
+          <Link href="/dashboard/tasks" className="block">
             <Card className="hover:shadow-md transition-all cursor-pointer h-full border-none shadow-sm">
               <CardContent className="p-6 flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Cases</p>
-                  <div className="text-3xl font-bold">{totalApps}</div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Tasks</p>
+                  <div className="text-3xl font-bold">{totalTasks}</div>
                 </div>
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <FileText className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <ClipboardCheck className="h-6 w-6 text-blue-600" />
                 </div>
               </CardContent>
             </Card>

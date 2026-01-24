@@ -67,16 +67,22 @@ export default function OrgUserManagement({
     const formData = new FormData(e.currentTarget);
     
     try {
+      let result;
       if (editingUser) {
         formData.append("id", editingUser.id);
-        await updateOrgUser(formData);
+        result = await updateOrgUser(formData);
       } else {
-        await createOrgUser(formData);
+        result = await createOrgUser(formData);
       }
-      setIsModalOpen(false);
+      
+      if (result && !result.success) {
+        alert(result.error);
+      } else {
+        setIsModalOpen(false);
+      }
     } catch (error) {
-      console.error("Failed to save user:", error);
-      alert(error instanceof Error ? error.message : "Failed to save user");
+       console.error("Failed to save user:", error);
+       alert("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }

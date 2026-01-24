@@ -64,7 +64,7 @@ export default async function TasksPage({
         and(
           eq(tasks.status, "PENDING"),
           gte(tasks.dueDate, new Date())
-        )
+        ) as SQL<unknown>
       );
     }
 

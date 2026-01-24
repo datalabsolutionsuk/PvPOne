@@ -115,25 +115,6 @@ export async function updateOrgUser(formData: FormData) {
   }
 }
 
-  if (!targetUser) {
-    throw new Error("User not found or unauthorized");
-  }
-
-  const updateData: any = {
-    name,
-    email,
-    role,
-  };
-
-  if (password) {
-    updateData.password = await bcrypt.hash(password, 10);
-  }
-
-  await db.update(users).set(updateData).where(eq(users.id, id));
-
-  revalidatePath("/dashboard/users");
-}
-
 export async function deleteOrgUser(id: string) {
   const session = await auth();
   const organisationId = await getCurrentOrganisationId();

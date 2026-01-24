@@ -124,11 +124,16 @@ export default async function TasksPage({
   const totalPages = Math.ceil(totalItems / pageSize);
   const paginatedTasks = taskList.slice(offset, offset + pageSize);
 
+  let pageTitle = "All Tasks";
+  if (searchParams.filter === "urgent") pageTitle = "Urgent Tasks";
+  if (searchParams.filter === "pending") pageTitle = "Pending Tasks";
+  if (searchParams.filter === "upcoming") pageTitle = "Upcoming Deadlines";
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       <div className="flex items-center justify-between flex-shrink-0">
         <h2 className="text-3xl font-bold tracking-tight">
-          {searchParams.filter === "urgent" ? "Urgent Tasks" : "All Tasks"}
+          {pageTitle}
         </h2>
         <div className="flex items-center gap-4">
           <div className="w-[300px]">

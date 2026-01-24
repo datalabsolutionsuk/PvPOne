@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { applications, tasks, varieties, jurisdictions, queries } from "@/db/schema";
-import { sql, eq, and, gte, asc, desc } from "drizzle-orm";
+import { sql, eq, and, gte, asc, desc, ne } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -138,8 +138,10 @@ export default async function DashboardPage({
       .where(and(...queriesConditions));
     totalQueries = Number(queriesCountRes[0].count);
 
-    // 6. Total Tasks Count (All statuses)
-    const totalTasksConditions = [];
+    // 6. Total Tasks Count (All statuses, excluding Documents)
+    const totalTasksConditions: any[] = [
+      ne(tasks.type, "DOCUMENT")
+    ];
     if (organisationId) {
       totalTasksConditions.push(eq(applications.organisationId, organisationId));
     }

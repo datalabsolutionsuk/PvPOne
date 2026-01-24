@@ -579,11 +579,17 @@ export async function uploadDocument(formData: FormData) {
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "image/jpeg",
-      "image/png"
+      "image/png",
+      "image/jpg",
+      "image/webp"
     ];
 
     if (!validTypes.includes(file.type)) {
       throw new Error("Invalid file type. Only PDF, Word, Excel, and Images (JPG, PNG) are allowed.");
+    }
+
+    if (file.size > 4.5 * 1024 * 1024) {
+      throw new Error("File size too large. Maximum size is 4.5MB.");
     }
   }
 
@@ -600,9 +606,12 @@ export async function uploadDocument(formData: FormData) {
      taskId = newTask.id;
   }
 
-  // In a real app, we would handle the file upload here.
-  // For MVP, we'll just simulate it.
-  const storagePath = `uploads/${Date.now()}_${name}`;
+  // Convert file to Base64 Data URI for storage
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const base64 = buffer.toString('base64');
+  const mimeType = file.type || 'application/octet-stream';
+  const storagePath = `data:${mimeType};base64,${base64}`;
 
   await db.insert(documents).values({
     organisationId: organisationId as string,

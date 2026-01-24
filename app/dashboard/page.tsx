@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { applications, tasks, varieties, jurisdictions, queries } from "@/db/schema";
-import { sql, eq, and, gte, asc, desc, ne } from "drizzle-orm";
+import { sql, eq, and, gte, lte, asc, desc, ne } from "drizzle-orm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -56,10 +56,14 @@ export default async function DashboardPage({
     
     stats = await statsQuery;
 
-    // 2. Upcoming Deadlines (Count & Paginated)
+    // 2. Upcoming Deadlines (Count & Paginated) - Next 90 Days
+    const next90Days = new Date();
+    next90Days.setDate(next90Days.getDate() + 90);
+
     const deadlinesConditions = [
       eq(tasks.status, "PENDING"),
-      gte(tasks.dueDate, new Date())
+      gte(tasks.dueDate, new Date()),
+      lte(tasks.dueDate, next90Days)
     ];
     if (organisationId) {
       deadlinesConditions.push(eq(applications.organisationId, organisationId));

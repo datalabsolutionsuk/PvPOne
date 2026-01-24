@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { tasks, applications, varieties, jurisdictions } from "@/db/schema";
-import { eq, and, gte, asc, desc, ne, or, sql, SQL } from "drizzle-orm";
+import { eq, and, gte, lte, asc, desc, ne, or, sql, SQL } from "drizzle-orm";
 import {
   Table,
   TableBody,
@@ -60,10 +60,14 @@ export default async function TasksPage({
     } else if (searchParams.filter === "pending") {
       conditions.push(eq(tasks.status, "PENDING"));
     } else if (searchParams.filter === "upcoming") {
+      const next90Days = new Date();
+      next90Days.setDate(next90Days.getDate() + 90);
+      
       conditions.push(
         and(
           eq(tasks.status, "PENDING"),
-          gte(tasks.dueDate, new Date())
+          gte(tasks.dueDate, new Date()),
+          lte(tasks.dueDate, next90Days)
         ) as SQL<unknown>
       );
     }

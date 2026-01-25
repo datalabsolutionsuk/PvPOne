@@ -25,6 +25,10 @@
 - **Task List behavior**:
     - **Issue**: Clicking "View" on a task redirected to the parent Application page, confusing users who wanted details on the specific task.
     - **Fix**: Updated the "View" button in `app/dashboard/tasks/page.tsx` to link to `/dashboard/tasks/[id]` (Task Details page).
+- **Smart Back Button**:
+    - **Issue**: Hardcoded back links were redirecting users to incorrect pages (e.g., task -> app instead of task -> list).
+    - **Fix**: Created generic `BackButton` component (`components/back-button.tsx`) that uses browser history (`router.back()`) with a fallback URL.
+    - **Locations**: Applied to Task Details, Application Details, New Application, and Edit Document pages.
 
 ## Technical Implementation Details
 
@@ -38,6 +42,11 @@
     - Added `documents` filter case.
     - Adjusted `upcoming` filter to remove `gte(now)` constraint (allowing overdue).
     - Changed table row action link to task details.
+- `components/back-button.tsx`: Created new component for history-aware navigation.
+- `app/dashboard/documents/[id]/edit/page.tsx`: Implemented BackButton.
+- `app/dashboard/applications/new/page.tsx`: Implemented BackButton.
+- `app/dashboard/applications/[id]/page.tsx`: Implemented BackButton.
+- `app/dashboard/tasks/[id]/page.tsx`: Implemented BackButton.
 
 ### SQL Logic Reference
 - **Upcoming Filter**: `AND(status = 'PENDING', dueDate <= NOW() + 90 days)`

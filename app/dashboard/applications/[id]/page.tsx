@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/table";
 import { TaskActions, AddTaskButton } from "./actions";
 import { SortableColumn } from "@/components/ui/sortable-column";
+import { BackButton } from "@/components/back-button";
 
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function ApplicationDetailsPage({
   params,
@@ -152,11 +153,7 @@ export default async function ApplicationDetailsPage({
     <div className="h-full overflow-y-auto pr-2">
       <div className="space-y-6 pb-8">
         <div className="flex items-center gap-4">
-          <Link href={backLink}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <BackButton fallbackUrl={backLink} />
           <div className="flex-1 flex items-center justify-between">
             <h2 className="text-3xl font-bold tracking-tight">
               {fromAll ? "Application Details" : isDusRelevant ? "DUS Details" : isCertificateRelevant ? "PBR Certificate Details" : "Application Details"}

@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 
 export default async function EditDocumentPage({ params }: { params: { id: string } }) {
@@ -43,11 +43,7 @@ export default async function EditDocumentPage({ params }: { params: { id: strin
     <div className="h-full overflow-y-auto pr-2">
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
         <div className="flex items-center gap-4">
-        <Link href="/dashboard/documents">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        <BackButton fallbackUrl="/dashboard/documents" />
         <h1 className="text-3xl font-bold">Edit Document</h1>
       </div>
 

@@ -12,6 +12,7 @@ import Link from "next/link";
 import { completeTask } from "@/lib/actions";
 import { ArrowLeft, FileText, Upload } from "lucide-react";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
+import { BackButton } from "@/components/back-button";
 
 export default async function TaskDetailsPage({
   params,
@@ -50,11 +51,7 @@ export default async function TaskDetailsPage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={`/dashboard/applications/${task.applicationId}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        <BackButton fallbackUrl={`/dashboard/applications/${task.applicationId}`} />
         <div className="flex-1 flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight mr-4">Task Details</h2>
           <div className="flex items-center gap-4">

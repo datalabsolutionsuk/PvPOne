@@ -12,7 +12,7 @@ export async function askPvPAssistant(query: string) {
     }
 
     // Fetch dynamic model name
-    const settings = await getSystemSettings().catch(() => ({}));
+    const settings: any = await getSystemSettings().catch(() => ({}));
     const modelName = settings["AI_MODEL_NAME"] || "gemini-1.5-flash";
 
     const genAI = new GoogleGenerativeAI(apiKey);

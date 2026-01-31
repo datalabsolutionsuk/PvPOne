@@ -70,3 +70,6 @@
 
 ### Bug Fixes
 - **Build Error**: Fixed missing `components/ui/scroll-area.tsx` and `@radix-ui/react-scroll-area` dependency which caused Vercel build to fail.
+
+### Bug Fixes
+- **AI Model Upgrade**: Updated AI model from `gemini-pro` to `gemini-1.5-flash` to resolve "404 Not Found" API errors.

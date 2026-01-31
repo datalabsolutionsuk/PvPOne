@@ -17,7 +17,7 @@ export async function generateEmailDraft(
       return { success: false, error: "API Key not configured on server (GOOGLE_GENERATIVE_AI_API_KEY)." };
     }
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are an expert legal assistant for a Plant Variety Protection (PVP) firm.

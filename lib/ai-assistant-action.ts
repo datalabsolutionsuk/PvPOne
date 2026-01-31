@@ -10,7 +10,7 @@ export async function askPvPAssistant(query: string) {
       return { success: false, error: "API Key not configured on server." };
     }
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = `
       You are the "PvP One AI Assistant", an expert in Plant Variety Protection (PVP) laws and compliance.

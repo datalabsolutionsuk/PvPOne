@@ -40,10 +40,11 @@ export default function CreateTaskForm({
   applications?: any[];
 }) {
   const [selectedAppId, setSelectedAppId] = useState(applicationId || "");
+  const [taskType, setTaskType] = useState(type || "DEADLINE");
 
   return (
     <form action={createTask} className="space-y-4">
-      <input type="hidden" name="type" value={type} />
+      <input type="hidden" name="type" value={taskType} />
       
       {!applicationId ? (
         <div className="space-y-2">
@@ -65,11 +66,24 @@ export default function CreateTaskForm({
         <>
             <input type="hidden" name="applicationId" value={applicationId} />
             <div className="bg-muted/50 p-4 rounded-md mb-6 text-sm">
-                <p className="font-medium text-muted-foreground mb-1">Creating {type === "DEADLINE" ? "Deadline" : "Requirement"} for:</p>
+                <p className="font-medium text-muted-foreground mb-1">Creating Task for:</p>
                 <p className="text-foreground font-semibold">{varietyName} <span className="font-normal text-muted-foreground">({jurisdictionName})</span></p>
             </div>
         </>
       )}
+
+      <div className="space-y-2">
+        <Label>Task Type</Label>
+        <Select value={taskType} onValueChange={setTaskType} name="type_selector">
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="DEADLINE">Deadline / Reminder</SelectItem>
+            <SelectItem value="DOCUMENT">Document Requirement</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
@@ -77,7 +91,7 @@ export default function CreateTaskForm({
           id="title" 
           name="title" 
           required 
-          placeholder={type === "DEADLINE" ? "e.g. Submit Annual Report" : "e.g. Power of Attorney"} 
+          placeholder={taskType === "DEADLINE" ? "e.g. Submit Annual Report" : "e.g. Power of Attorney"} 
         />
       </div>
 
@@ -91,7 +105,7 @@ export default function CreateTaskForm({
         <Input id="dueDate" name="dueDate" type="date" />
       </div>
 
-      {type === "DOCUMENT" && (
+      {taskType === "DOCUMENT" && (
         <div className="space-y-2 pt-2 border-t">
           <Label htmlFor="file">Upload Document (Optional)</Label>
           <Input id="file" name="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
@@ -103,9 +117,9 @@ export default function CreateTaskForm({
 
       <div className="flex justify-end gap-2 pt-4">
         <Button asChild variant="outline">
-          <Link href={`/dashboard/applications/${applicationId}`}>Cancel</Link>
+          <Link href={applicationId ? `/dashboard/applications/${applicationId}` : "/dashboard/tasks"}>Cancel</Link>
         </Button>
-        <SubmitButton type={type} />
+        <SubmitButton type={taskType} />
       </div>
     </form>
   );

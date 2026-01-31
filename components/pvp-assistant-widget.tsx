@@ -37,7 +37,14 @@ export function PvPAssistantWidget() {
     setLoading(true);
 
     try {
-      const result = await askPvPAssistant(userMsg.content);
+      // Convert messages to history format expected by backend
+      // Exclude the very first hardcoded welcome message if needed, or mapping "assistant" -> "model" is handled backend side but the type definition there is 'role: string'.
+      const history = messages.map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      const result = await askPvPAssistant(userMsg.content, history);
       
       if (result.success && result.text) {
         setMessages((prev) => [...prev, { role: "assistant", content: result.text }]);

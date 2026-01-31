@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
-export async function askPvPAssistant(query: string) {
+export async function askPvPAssistant(query: string, history: { role: string; content: string }[] = []) {
   try {
     const session = await auth();
     const userContext = session?.user 
@@ -22,17 +22,16 @@ export async function askPvPAssistant(query: string) {
     const modelName = dbModelName || "gemini-1.5-flash";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: modelName });
-
-    const systemPrompt = `
+    
+    const systemInstruction = `
       You are the "PvP One AI Assistant".
       
       # Current User Context
       ${userContext}
       
       Instructions:
-      1. Greet the user by their name if available.
-      2. Tailor your answers based on their role (e.g., Breeders care about varieties, Admins care about users).
+      1. Tailor your answers based on their role (e.g., Breeders care about varieties, Admins care about users).
+      2. ONLY greet the user if they greet you first, or if this is the very first message in the conversation. Do not repeat greetings in subsequent messages.
       
       Your goal is to help users navigate the platform and understand PVP concepts.
       
@@ -74,11 +73,21 @@ export async function askPvPAssistant(query: string) {
       - If asked about "Egypt" requirements: They typically require a Power of Attorney (legalized), an Assignment Deed (if breeder != applicant), and DUS samples.
       - If asked about specific platform tasks ("How do I upload?"), tell them to go to the "Task Details" page and click the "Upload" button.
       - Do NOT make up laws. If unsure, advise consulting a lawyer.
-      
-      User Query: "${query}"
     `;
 
-    const result = await model.generateContent(systemPrompt);
+    const model = genAI.getGenerativeModel({ 
+      model: modelName,
+      systemInstruction: systemInstruction 
+    });
+
+    const chat = model.startChat({
+      history: history.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      })),
+    });
+
+    const result = await chat.sendMessage(query);
     const response = await result.response;
     const text = response.text();
     

@@ -13,6 +13,7 @@ import { completeTask } from "@/lib/actions";
 import { ArrowLeft, FileText, Upload } from "lucide-react";
 import { getCurrentOrganisationId, isSuperAdmin } from "@/lib/context";
 import { BackButton } from "@/components/back-button";
+import { AICommunicator } from "@/components/ai-communicator";
 
 export default async function TaskDetailsPage({
   params,
@@ -55,6 +56,16 @@ export default async function TaskDetailsPage({
         <div className="flex-1 flex items-center justify-between">
           <h2 className="text-3xl font-bold tracking-tight mr-4">Task Details</h2>
           <div className="flex items-center gap-4">
+            {superAdmin && task.status === 'PENDING' && (
+              <AICommunicator 
+                clientName={task.owner || "Client"}
+                varietyName={task.application.variety.name}
+                jurisdiction={task.application.jurisdiction.name}
+                taskType={task.type}
+                dueDate={task.dueDate}
+                missingDocName={taskDocuments.length === 0 ? task.title : undefined}
+              />
+            )}
             <Link href={`/dashboard/documents/upload?taskId=${task.id}&type=${task.title}`}>
               <Button size="sm">
                 <Upload className="mr-2 h-4 w-4" /> Upload

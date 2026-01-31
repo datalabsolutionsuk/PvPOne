@@ -2,7 +2,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
+const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
 export async function generateEmailDraft(
   clientName: string,
@@ -13,6 +13,10 @@ export async function generateEmailDraft(
   missingDocName?: string
 ) {
   try {
+    if (!apiKey) {
+      return { success: false, error: "API Key not configured on server (GOOGLE_GENERATIVE_AI_API_KEY)." };
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `

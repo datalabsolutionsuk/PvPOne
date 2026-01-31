@@ -41,7 +41,7 @@ export function PvPAssistantWidget() {
       if (result.success && result.text) {
         setMessages((prev) => [...prev, { role: "assistant", content: result.text }]);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
+        setMessages((prev) => [...prev, { role: "assistant", content: result.error || "Sorry, I encountered an error. Please try again." }]);
       }
     } catch (e) {
       setMessages((prev) => [...prev, { role: "assistant", content: "Network error occurred." }]);

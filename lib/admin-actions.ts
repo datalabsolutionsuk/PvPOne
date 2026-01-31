@@ -138,3 +138,12 @@ export async function getSystemSettings() {
     return acc;
   }, {} as Record<string, string>);
 }
+
+export async function getAIModelName() {
+  const setting = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.key, "AI_MODEL_NAME"));
+  
+  return setting[0]?.value; 
+}

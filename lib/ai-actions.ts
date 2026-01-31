@@ -1,7 +1,7 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getSystemSettings } from "@/lib/admin-actions";
+import { getAIModelName } from "@/lib/admin-actions";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
@@ -19,8 +19,8 @@ export async function generateEmailDraft(
     }
     
     // Fetch dynamic model name from DB settings, fallback to flash
-    const settings: any = await getSystemSettings().catch(() => ({}));
-    const modelName = settings["AI_MODEL_NAME"] || "gemini-1.5-flash";
+    const dbModelName = await getAIModelName().catch(() => null);
+    const modelName = dbModelName || "gemini-1.5-flash";
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: modelName });

@@ -67,3 +67,6 @@
     - Created `lib/ai-actions.ts` and `lib/ai-assistant-action.ts` for server-side API calls.
     - Added `@google/generative-ai` dependency.
     - Configured `GOOGLE_GENERATIVE_AI_API_KEY` in `.env.local`.
+
+### Bug Fixes
+- **Build Error**: Fixed missing `components/ui/scroll-area.tsx` and `@radix-ui/react-scroll-area` dependency which caused Vercel build to fail.

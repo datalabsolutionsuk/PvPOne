@@ -1,6 +1,7 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getSystemSettings } from "@/lib/admin-actions";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
@@ -16,8 +17,13 @@ export async function generateEmailDraft(
     if (!apiKey) {
       return { success: false, error: "API Key not configured on server (GOOGLE_GENERATIVE_AI_API_KEY)." };
     }
+    
+    // Fetch dynamic model name from DB settings, fallback to flash
+    const settings = await getSystemSettings().catch(() => ({}));
+    const modelName = settings["AI_MODEL_NAME"] || "gemini-1.5-flash";
+
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = `
       You are an expert legal assistant for a Plant Variety Protection (PVP) firm.

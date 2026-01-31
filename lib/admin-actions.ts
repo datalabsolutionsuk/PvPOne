@@ -108,6 +108,7 @@ export async function saveSystemSettings(formData: FormData) {
     { key: "STRIPE_SECRET_KEY", value: formData.get("stripeSecretKey") as string },
     { key: "PAYPAL_CLIENT_ID", value: formData.get("paypalClientId") as string },
     { key: "PAYPAL_CLIENT_SECRET", value: formData.get("paypalClientSecret") as string },
+    { key: "AI_MODEL_NAME", value: formData.get("aiModelName") as string },
   ];
 
   for (const setting of settings) {

@@ -69,7 +69,29 @@ export default async function AdminSettingsPage() {
           </form>
         </CardContent>
       </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={saveSystemSettings} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="aiModelName">Google Gemini Model Name</Label>
+              <Input 
+                id="aiModelName" 
+                name="aiModelName" 
+                defaultValue={settings["AI_MODEL_NAME"] || "gemini-1.5-flash"} 
+                placeholder="e.g. gemini-1.5-flash or gemini-pro"
+              />
+              <p className="text-sm text-muted-foreground">
+                Specify the Gemini model version to use for AI features. 
+                Common values: <code>gemini-1.5-flash</code> (faster/cheaper), <code>gemini-pro</code> (legacy), <code>gemini-1.5-pro</code> (smarter).
+              </p>
+            </div>
+            <Button type="submit">Save AI Settings</Button>
+          </form>
+        </CardContent>
+      </Card>      </div>
     </div>
   );
 }

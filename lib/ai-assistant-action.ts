@@ -1,6 +1,7 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getSystemSettings } from "@/lib/admin-actions";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
@@ -9,8 +10,13 @@ export async function askPvPAssistant(query: string) {
     if (!apiKey) {
       return { success: false, error: "API Key not configured on server." };
     }
+
+    // Fetch dynamic model name
+    const settings = await getSystemSettings().catch(() => ({}));
+    const modelName = settings["AI_MODEL_NAME"] || "gemini-1.5-flash";
+
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const systemPrompt = `
       You are the "PvP One AI Assistant", an expert in Plant Variety Protection (PVP) laws and compliance.

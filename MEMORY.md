@@ -51,3 +51,19 @@
 ### SQL Logic Reference
 - **Upcoming Filter**: `AND(status = 'PENDING', dueDate <= NOW() + 90 days)`
 - **Total Tasks**: `type != 'DOCUMENT'`
+
+## Session Summary (January 31, 2026)
+
+### AI Features Implementation (Google Gemini)
+- **Email Drafter (Super Admin)**:
+    - **Goal**: Help admins draft follow-up emails for pending tasks.
+    - **Implementation**: `AICommunicator` component in Task Details. Uses Gemini Pro to generate text based on task context.
+    - **Files**: `components/ai-communicator.tsx`, `lib/ai-actions.ts`, `app/dashboard/tasks/[id]/page.tsx`.
+- **PvP Assistant (End User)**:
+    - **Goal**: Answer common questions about regulations (DUS, UPOV) and platform usage.
+    - **Implementation**: Global floating chat widget `PvPAssistantWidget`.
+    - **Files**: `components/pvp-assistant-widget.tsx`, `lib/ai-assistant-action.ts`, `app/layout.tsx`.
+- **Infrastructure**:
+    - Created `lib/ai-actions.ts` and `lib/ai-assistant-action.ts` for server-side API calls.
+    - Added `@google/generative-ai` dependency.
+    - Configured `GOOGLE_GENERATIVE_AI_API_KEY` in `.env.local`.

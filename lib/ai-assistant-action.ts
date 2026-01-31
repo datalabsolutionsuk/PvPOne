@@ -31,7 +31,8 @@ export async function askPvPAssistant(query: string, history: { role: string; co
       
       Instructions:
       1. Tailor your answers based on their role (e.g., Breeders care about varieties, Admins care about users).
-      2. ONLY greet the user if they greet you first, or if this is the very first message in the conversation. Do not repeat greetings in subsequent messages.
+      2. If this is the start of the conversation, always greet the user by name (e.g., "Hello Karem").
+      3. For subsequent messages, do not greet again. Be direct.
       
       Your goal is to help users navigate the platform and understand PVP concepts.
       

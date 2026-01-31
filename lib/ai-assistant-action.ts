@@ -3,6 +3,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getAIModelName } from "@/lib/admin-actions";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { jurisdictions, rulesets } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
@@ -21,6 +24,38 @@ export async function askPvPAssistant(query: string, history: { role: string; co
     const dbModelName = await getAIModelName().catch(() => null);
     const modelName = dbModelName || "gemini-1.5-flash";
 
+    // Build Knowledge Base (Jurisdictions & Fees)
+    const jurData = await db.query.jurisdictions.findMany({
+        with: {
+            rulesets: {
+                where: eq(rulesets.isActive, true),
+                with: {
+                   fees: true,
+                   documentRequirements: true,
+                }
+            }
+        }
+    });
+
+    let jurisdictionKnowledge = "## Jurisdiction Requirements & Fees (Live Data)\n";
+    jurData.forEach(j => {
+        jurisdictionKnowledge += `### ${j.name} (${j.code})\n`
+        if (j.rulesets.length > 0) {
+            const r = j.rulesets[0];
+            if (r.fees && r.fees.length > 0) {
+                jurisdictionKnowledge += "**Official Fees:**\n";
+                r.fees.forEach(f => jurisdictionKnowledge += `- ${f.feeType}: ${f.amount} ${f.currencyCode} ${f.notes ? `(${f.notes})` : ''}\n`);
+            }
+            if (r.documentRequirements && r.documentRequirements.length > 0) {
+                 jurisdictionKnowledge += "**Required Documents:**\n";
+                 r.documentRequirements.forEach(d => jurisdictionKnowledge += `- ${d.docType} ${d.requiredBool ? '(Required)' : '(Optional)'} ${d.notes ? `(${d.notes})` : ''}\n`);
+            }
+        } else {
+            jurisdictionKnowledge += "(No active rules/fees configured in system)\n";
+        }
+        jurisdictionKnowledge += "\n";
+    });
+
     const genAI = new GoogleGenerativeAI(apiKey);
     
     const systemInstruction = `
@@ -29,6 +64,9 @@ export async function askPvPAssistant(query: string, history: { role: string; co
       # Current User Context
       ${userContext}
       
+      # Knowledge Base: Jurisdictions & Fees
+      ${jurisdictionKnowledge}
+
       Instructions:
       1. Tailor your answers based on their role (e.g., Breeders care about varieties, Admins care about users).
       2. If this is the start of the conversation, always greet the user by name (e.g., "Hello Karem").

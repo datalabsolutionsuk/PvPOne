@@ -373,11 +373,35 @@ export const rulesetsRelations = relations(rulesets, ({ one, many }) => ({
     references: [jurisdictions.id],
   }),
   deadlines: many(ruleDeadlines),
+  fees: many(ruleFees),
+  documentRequirements: many(ruleDocumentRequirements),
+  terms: many(ruleTerms),
 }));
 
 export const ruleDeadlinesRelations = relations(ruleDeadlines, ({ one }) => ({
   ruleset: one(rulesets, {
     fields: [ruleDeadlines.rulesetId],
+    references: [rulesets.id],
+  }),
+}));
+
+export const ruleFeesRelations = relations(ruleFees, ({ one }) => ({
+  ruleset: one(rulesets, {
+    fields: [ruleFees.rulesetId],
+    references: [rulesets.id],
+  }),
+}));
+
+export const ruleDocumentRequirementsRelations = relations(ruleDocumentRequirements, ({ one }) => ({
+  ruleset: one(rulesets, {
+    fields: [ruleDocumentRequirements.rulesetId],
+    references: [rulesets.id],
+  }),
+}));
+
+export const ruleTermsRelations = relations(ruleTerms, ({ one }) => ({
+  ruleset: one(rulesets, {
+    fields: [ruleTerms.rulesetId],
     references: [rulesets.id],
   }),
 }));

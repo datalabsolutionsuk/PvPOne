@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createTask } from "@/lib/actions";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
+import { useState } from "react";
 
 function SubmitButton({ type }: { type: string }) {
   const { pending } = useFormStatus();
@@ -22,22 +30,46 @@ export default function CreateTaskForm({
   applicationId, 
   type,
   varietyName,
-  jurisdictionName
+  jurisdictionName,
+  applications = []
 }: { 
-  applicationId: string; 
+  applicationId?: string; 
   type: string;
-  varietyName: string;
-  jurisdictionName: string;
+  varietyName?: string;
+  jurisdictionName?: string;
+  applications?: any[];
 }) {
+  const [selectedAppId, setSelectedAppId] = useState(applicationId || "");
+
   return (
     <form action={createTask} className="space-y-4">
-      <input type="hidden" name="applicationId" value={applicationId} />
       <input type="hidden" name="type" value={type} />
       
-      <div className="bg-muted/50 p-4 rounded-md mb-6 text-sm">
-        <p className="font-medium text-muted-foreground mb-1">Creating {type === "DEADLINE" ? "Deadline" : "Requirement"} for:</p>
-        <p className="text-foreground font-semibold">{varietyName} <span className="font-normal text-muted-foreground">({jurisdictionName})</span></p>
-      </div>
+      {!applicationId ? (
+        <div className="space-y-2">
+            <Label>Application</Label>
+            <Select name="applicationId" required onValueChange={setSelectedAppId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an application for this task" />
+              </SelectTrigger>
+              <SelectContent>
+                {applications.map((app) => (
+                  <SelectItem key={app.id} value={app.id}>
+                    {app.variety.name} ({app.jurisdiction.name})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
+      ) : (
+        <>
+            <input type="hidden" name="applicationId" value={applicationId} />
+            <div className="bg-muted/50 p-4 rounded-md mb-6 text-sm">
+                <p className="font-medium text-muted-foreground mb-1">Creating {type === "DEADLINE" ? "Deadline" : "Requirement"} for:</p>
+                <p className="text-foreground font-semibold">{varietyName} <span className="font-normal text-muted-foreground">({jurisdictionName})</span></p>
+            </div>
+        </>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>

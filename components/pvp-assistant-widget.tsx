@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Loader2, Bot, User } from "lucide-react";
 import { askPvPAssistant } from "@/lib/ai-assistant-action";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -91,7 +92,17 @@ export function PvPAssistantWidget() {
                       : "bg-gray-100 text-slate-800"
                   }`}
                 >
-                  {m.content}
+                  <div className={`prose prose-sm max-w-none ${
+                        m.role === "user" ? "prose-invert" : "prose-slate"
+                    } prose-p:my-1 prose-ul:my-1 prose-li:my-0`}>
+                    <ReactMarkdown 
+                      components={{
+                        a: ({node, ...props}) => <a {...props} className="underline font-semibold hover:text-blue-400" target="_blank" rel="noopener noreferrer" />
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
 
                 {m.role === "user" && (

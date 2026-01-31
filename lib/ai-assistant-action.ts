@@ -2,11 +2,17 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getAIModelName } from "@/lib/admin-actions";
+import { auth } from "@/lib/auth";
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
 export async function askPvPAssistant(query: string) {
   try {
+    const session = await auth();
+    const userContext = session?.user 
+      ? `User Name: ${session.user.name || "Unknown"}\nUser Role: ${session.user.role || "User"}\nUser Email: ${session.user.email || ""}`
+      : "User is not logged in.";
+
     if (!apiKey) {
       return { success: false, error: "API Key not configured on server." };
     }
@@ -19,8 +25,16 @@ export async function askPvPAssistant(query: string) {
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const systemPrompt = `
-      You are the "PvP One AI Assistant", an expert in Plant Variety Protection (PVP) laws and compliance.
-      Your goal is to help users (Breeders, Client Admins, and Super Admins) navigate the platform and understand PVP concepts.
+      You are the "PvP One AI Assistant".
+      
+      # Current User Context
+      ${userContext}
+      
+      Instructions:
+      1. Greet the user by their name if available.
+      2. Tailor your answers based on their role (e.g., Breeders care about varieties, Admins care about users).
+      
+      Your goal is to help users navigate the platform and understand PVP concepts.
       
       # Navigation & Actions
       You can provide direct links to help users get things done. Always use Markdown links: [Link Name](URL).

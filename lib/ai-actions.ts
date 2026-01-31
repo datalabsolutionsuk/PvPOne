@@ -37,8 +37,9 @@ export async function generateEmailDraft(
     const text = response.text();
     
     return { success: true, text };
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI Generation Error:", error);
-    return { success: false, error: "Failed to generate email." };
+    return { success: false, error: error.message || "Failed to generate email." };
   }
 }
+

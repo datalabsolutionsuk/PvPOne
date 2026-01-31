@@ -80,11 +80,20 @@ export async function askPvPAssistant(query: string, history: { role: string; co
       systemInstruction: systemInstruction 
     });
 
-    const chat = model.startChat({
-      history: history.map(msg => ({
+    // Sanitize history to ensure it starts with a user message
+    // 1. Map roles to Gemini format (user/model)
+    // 2. Drop any leading 'model' messages (Gemini requires history to start with user)
+    let formattedHistory = history.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }],
-      })),
+    }));
+
+    while (formattedHistory.length > 0 && formattedHistory[0].role === 'model') {
+        formattedHistory.shift();
+    }
+
+    const chat = model.startChat({
+      history: formattedHistory,
     });
 
     const result = await chat.sendMessage(query);
